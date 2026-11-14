@@ -195,3 +195,26 @@ section.late h2 { color: var(--danger); }
   .sheet { max-width: 620px; border-radius: 16px; max-height: 88vh; }
   .grab { display: none; }
 }
+
+/* Recorrência */
+.repeat-opts { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px; border: 1px dashed var(--line); border-radius: 10px; background: var(--bg); font-size: 14px; }
+.repeat-opts .inline { display: inline-flex; align-items: center; gap: 6px; }
+.repeat-opts input[type="number"] { width: 64px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; }
+.repeat-opts input[type="date"] { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 8px; }
+.repeat-opts small { color: var(--muted); }
+.repeat-opts .hint { flex-basis: 100%; margin: 0; }
+.weekdays { display: inline-flex; gap: 4px; }
+.weekdays button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 600; padding: 0; }
+.weekdays button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* Checklist */
+.checklist { display: grid; gap: 4px; }
+.citem { display: flex; align-items: center; gap: 8px; }
+.citem input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ok); flex: none; }
+.citem input[type="text"] { flex: 1; min-width: 0; border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 5px 6px; }
+.citem input[type="text"]:hover, .citem input[type="text"]:focus { border-color: var(--line); background: var(--bg); outline: none; }
+.citem.done input[type="text"] { text-decoration: line-through; color: var(--muted); }
+.citem .rm { border: 0; background: none; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 6px; }
+.citem .rm:hover { color: var(--danger); }
+.check-add { border: 1px dashed var(--line); background: transparent; border-radius: 8px; padding: 7px 10px; width: 100%; }
+.tag.prog.complete { background: var(--ok); color: #fff; border-color: transparent; }

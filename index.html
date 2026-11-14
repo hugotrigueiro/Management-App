@@ -124,6 +124,21 @@
       </label>
       <label class="mini"><span>Projeto</span><input id="f-project" list="dl-project" maxlength="120"><datalist id="dl-project"></datalist></label>
       <label class="mini" id="clientwrap"><span>Cliente</span><input id="f-client" list="dl-client" maxlength="120"><datalist id="dl-client"></datalist></label>
+      <label class="mini"><span>Repetir</span>
+        <select id="f-repeat"><option value="">Não repete</option><option value="daily">Diariamente</option><option value="weekly">Semanalmente</option><option value="monthly">Mensalmente</option></select>
+      </label>
+    </div>
+    <div class="repeat-opts" id="f-repeat-opts" hidden>
+      <label class="inline">A cada <input id="f-rep-int" type="number" min="1" max="365" value="1" inputmode="numeric"> <span id="f-rep-unit">semana(s)</span></label>
+      <div class="weekdays" id="f-rep-days" role="group" aria-label="Dias da semana"></div>
+      <label class="inline" id="f-rep-mday-wrap">no dia <input id="f-rep-mday" type="number" min="1" max="31" inputmode="numeric"> do mês</label>
+      <label class="inline">até <input id="f-rep-until" type="date"> <small>(opcional)</small></label>
+      <p class="hint" id="f-rep-hint"></p>
+    </div>
+    <div class="field">
+      <label id="f-check-l">Checklist <span class="hint" id="f-check-count"></span></label>
+      <div class="checklist" id="f-checklist" aria-labelledby="f-check-l"></div>
+      <input class="check-add" id="f-check-add" maxlength="300" placeholder="Adicionar item e apertar Enter" aria-label="Novo item do checklist">
     </div>
     <div class="field"><label id="f-assignees-l">Responsáveis</label><div class="people" id="f-assignees" role="group" aria-labelledby="f-assignees-l"></div></div>
     <button type="button" class="linkbtn more" id="f-more" aria-expanded="false">Mais opções</button>

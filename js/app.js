@@ -13,7 +13,8 @@ const S = {
   ws: store("t.ws"), status: "open", q: "", project: "", client: "", assignee: "", due: "", prio: "",
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
   editing: null, pick: [], editingWs: null,
-  selecting: false, sel: new Set(), visibleIds: [], bulkPick: []
+  selecting: false, sel: new Set(), visibleIds: [], bulkPick: [],
+  checklist: new Map(), draft: [], repDays: []
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -74,6 +75,19 @@ function fmtStamp(iso) {
   return `${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+function repeatLabel(t) {
+  if (!t.repeat_freq) return "";
+  const n = t.repeat_interval || 1;
+  if (t.repeat_freq === "daily") return n === 1 ? "Todo dia" : `A cada ${n} dias`;
+  if (t.repeat_freq === "weekly") {
+    const base = n === 1 ? "Toda semana" : `A cada ${n} semanas`;
+    const days = [...(t.repeat_weekdays || [])].sort((a, b) => a - b).map((d) => WD[d]);
+    return days.length ? `${base} (${days.join(", ")})` : base;
+  }
+  const base = n === 1 ? "Todo mês" : `A cada ${n} meses`;
+  return t.repeat_monthday ? `${base}, dia ${t.repeat_monthday}` : base;
+}
+
 /* ================= Pessoas ================= */
 function nameOf(id, short) {
   if (!id) return "alguém";
@@ -118,13 +132,17 @@ async function loadAll() {
   if (loading) { scheduleReload(); return loading; }
   loading = (async () => {
     try {
-      const [profiles, workspaces, members, tasks, assignees] = await Promise.all([
+      const [profiles, workspaces, members, tasks, assignees, items] = await Promise.all([
         fetchAll("profiles", "id,email,display_name,avatar_url"),
         fetchAll("workspaces", "*", "sort_order"),
         fetchAll("workspace_members", "workspace_id,user_id,role"),
         fetchAll("tasks", "*", "id"),
-        fetchAll("task_assignees", "task_id,user_id")
+        fetchAll("task_assignees", "task_id,user_id"),
+        fetchAll("task_checklist_items", "id,task_id,text,done,position", "position")
       ]);
+      const cl = new Map();
+      for (const it of items) { if (!cl.has(it.task_id)) cl.set(it.task_id, []); cl.get(it.task_id).push(it); }
+      S.checklist = cl;
       S.profiles = new Map(profiles.map((p) => [p.id, p]));
       S.me = S.profiles.get(S.uid) || S.me;
       S.workspaces = workspaces.sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at));
@@ -150,7 +168,7 @@ let channel = null;
 function subscribe() {
   if (channel) return;
   channel = sb.channel("tudo");
-  for (const table of ["tasks", "task_assignees", "workspaces", "workspace_members", "profiles"]) {
+  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles"]) {
     channel.on("postgres_changes", { event: "*", schema: "public", table }, scheduleReload);
   }
   channel.subscribe();
@@ -231,6 +249,9 @@ function taskCard(t, ws) {
         t.due_date ? h("span", { class: dateCls, text: fmtDate(t.due_date) }) : null,
         t.project ? h("span", { class: "tag", text: t.project }) : null,
         isWork(ws) && t.client ? h("span", { class: "tag client", text: t.client }) : null,
+        t.repeat_freq ? h("span", { class: "tag", title: "Tarefa recorrente", text: "↻ " + repeatLabel(t) }) : null,
+        (() => { const it = S.checklist.get(t.id) || []; if (!it.length) return null; const d = it.filter((x) => x.done).length;
+          return h("span", { class: "tag prog" + (d === it.length ? " complete" : ""), text: `☑ ${d}/${it.length}` }); })(),
         t.notes ? h("span", { class: "tag note", text: "Observações" }) : null,
         t.done && t.done_at ? h("span", { class: "tag", text: "Concluída " + fmtDate(ymd(new Date(t.done_at))).toLowerCase() }) : null,
         as.length ? h("span", { class: "avs" }, [...as.slice(0, 3).map(avatar), h("span", { text: as.map((id) => nameOf(id, true)).join(", ") })]) : null
@@ -379,6 +400,15 @@ function openTask(t) {
   $("f-notes").value = t ? t.notes : "";
   $("f-done").checked = !!(t && t.done);
   $("donewrap").hidden = !t;
+  $("f-repeat").value = (t && t.repeat_freq) || "";
+  $("f-rep-int").value = (t && t.repeat_interval) || 1;
+  $("f-rep-mday").value = (t && t.repeat_monthday) || "";
+  $("f-rep-until").value = (t && t.repeat_until) || "";
+  S.repDays = t && t.repeat_weekdays ? [...t.repeat_weekdays] : [];
+  syncRepeat();
+  S.draft = t ? (S.checklist.get(t.id) || []).map((x) => ({ ...x })) : [];
+  $("f-check-add").value = "";
+  renderChecklist();
   const adv = !!(t && (t.description || t.notes));
   $("f-advanced").hidden = !adv; $("f-more").setAttribute("aria-expanded", String(adv));
   $("f-more").textContent = adv ? "Menos opções" : "Mais opções";
@@ -398,6 +428,80 @@ function openTask(t) {
 }
 const closeTask = () => { $("ov-task").hidden = true; S.editing = null; };
 
+/* ---- Recorrência no formulário ---- */
+function baseDate() { const v = $("f-due").value; if (!v) return new Date(); const [y, m, d] = v.split("-").map(Number); return new Date(y, m - 1, d); }
+function syncRepeat() {
+  const f = $("f-repeat").value;
+  $("f-repeat-opts").hidden = !f;
+  if (!f) return;
+  const n = Math.max(1, Number($("f-rep-int").value) || 1);
+  $("f-rep-unit").textContent = f === "daily" ? (n === 1 ? "dia" : "dias") : f === "weekly" ? (n === 1 ? "semana" : "semanas") : (n === 1 ? "mês" : "meses");
+  $("f-rep-days").hidden = f !== "weekly";
+  $("f-rep-mday-wrap").hidden = f !== "monthly";
+  if (f === "weekly" && !S.repDays.length) S.repDays = [baseDate().getDay()];
+  if (f === "monthly" && !$("f-rep-mday").value) $("f-rep-mday").value = baseDate().getDate();
+  $("f-rep-days").replaceChildren(...["D", "S", "T", "Q", "Q", "S", "S"].map((l, i) => h("button", {
+    type: "button", "aria-pressed": String(S.repDays.includes(i)), "aria-label": WD[i], text: l,
+    onclick: () => { S.repDays = S.repDays.includes(i) ? S.repDays.filter((x) => x !== i) : [...S.repDays, i]; if (!S.repDays.length) S.repDays = [i]; syncRepeat(); }
+  })));
+  $("f-rep-hint").textContent = "Ao concluir, a próxima ocorrência é criada sozinha, com o checklist zerado e os mesmos responsáveis.";
+}
+function repeatFields() {
+  const f = $("f-repeat").value;
+  if (!f) return { repeat_freq: null, repeat_interval: 1, repeat_weekdays: [], repeat_monthday: null, repeat_until: null };
+  const md = Number($("f-rep-mday").value);
+  return {
+    repeat_freq: f,
+    repeat_interval: Math.min(365, Math.max(1, Number($("f-rep-int").value) || 1)),
+    repeat_weekdays: f === "weekly" ? [...S.repDays].sort((a, b) => a - b) : [],
+    repeat_monthday: f === "monthly" && md >= 1 && md <= 31 ? md : null,
+    repeat_until: $("f-rep-until").value || null
+  };
+}
+$("f-repeat").addEventListener("change", syncRepeat);
+$("f-rep-int").addEventListener("input", syncRepeat);
+
+/* ---- Checklist no formulário ---- */
+async function clDb(op) { try { const { error } = await op; if (error) throw error; } catch (e) { fail(e); } }
+function renderChecklist() {
+  const box = $("f-checklist");
+  const done = S.draft.filter((x) => x.done).length;
+  $("f-check-count").textContent = S.draft.length ? `${done}/${S.draft.length}` : "";
+  box.replaceChildren(...S.draft.map((item) => {
+    const cb = h("input", { type: "checkbox", "aria-label": "Item feito" }); cb.checked = item.done;
+    cb.addEventListener("change", () => {
+      item.done = cb.checked; renderChecklist();
+      if (item.id) clDb(sb.from("task_checklist_items").update({ done: item.done }).eq("id", item.id));
+    });
+    const txt = h("input", { type: "text", maxlength: "300", "aria-label": "Texto do item" }); txt.value = item.text;
+    txt.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); txt.blur(); } });
+    txt.addEventListener("change", () => {
+      const v = txt.value.trim();
+      if (!v) { removeItem(item); return; }
+      item.text = v;
+      if (item.id) clDb(sb.from("task_checklist_items").update({ text: v }).eq("id", item.id));
+    });
+    return h("div", { class: "citem" + (item.done ? " done" : "") }, [cb, txt,
+      h("button", { type: "button", class: "rm", "aria-label": "Remover item", text: "×", onclick: () => removeItem(item) })]);
+  }));
+}
+function removeItem(item) {
+  S.draft = S.draft.filter((x) => x !== item); renderChecklist();
+  if (item.id) clDb(sb.from("task_checklist_items").delete().eq("id", item.id));
+}
+$("f-check-add").addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  const v = e.target.value.trim(); if (!v) return;
+  e.target.value = "";
+  const item = { id: null, text: v, done: false, position: S.draft.length };
+  S.draft.push(item); renderChecklist();
+  if (S.editing) {
+    const { data, error } = await sb.from("task_checklist_items").insert({ task_id: S.editing.id, text: v, position: item.position }).select("id").single();
+    if (error) fail(error); else item.id = data.id;
+  }
+});
+
 $("taskform").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const title = $("f-title").value.trim(); if (!title) return;
@@ -410,8 +514,10 @@ $("taskform").addEventListener("submit", async (ev) => {
     priority: $("f-prio").value ? Number($("f-prio").value) : null,
     project: $("f-project").value.trim(),
     client: isWork(ws) ? $("f-client").value.trim() : "",
-    done: S.editing ? $("f-done").checked : false
+    done: S.editing ? $("f-done").checked : false,
+    ...repeatFields()
   };
+  if (row.repeat_freq && !row.due_date) row.due_date = today();
   const btn = $("f-save"); btn.disabled = true;
   try {
     let id;
@@ -423,6 +529,10 @@ $("taskform").addEventListener("submit", async (ev) => {
       const { data, error } = await sb.from("tasks").insert(row).select("id").single();
       if (error) throw error;
       id = data.id;
+      if (S.draft.length) {
+        const { error: e2 } = await sb.from("task_checklist_items").insert(S.draft.map((x, i) => ({ task_id: id, text: x.text, done: x.done, position: i })));
+        if (e2) throw e2;
+      }
     }
     const before = S.editing ? assigneesOf(id) : [];
     const add = S.pick.filter((u) => !before.includes(u));
