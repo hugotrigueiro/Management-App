@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d2a44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tarefas">
+<title>Tarefas</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<!-- Tela de login -->
+<section id="login" class="login" hidden>
+  <div class="login-card">
+    <img src="icons/icon-192.png" alt="" width="72" height="72">
+    <h1>Tarefas</h1>
+    <p>Casa e trabalho no mesmo lugar, para quem você convidar.</p>
+    <button type="button" class="btn google" id="btn-google">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.6 10.6 0 0 0 12 1 11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+      Entrar com Google
+    </button>
+    <p class="hint" id="login-msg"></p>
+  </div>
+</section>
+
+<!-- App -->
+<div class="app" id="app" hidden>
+  <header>
+    <div class="top">
+      <h1>Tarefas</h1>
+      <button type="button" class="me" id="btn-me" aria-label="Seu perfil"><img id="me-avatar" alt="" width="30" height="30"><span id="me-name"></span></button>
+    </div>
+    <div class="chips" id="wschips" role="toolbar" aria-label="Ambientes"></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Situação">
+        <button type="button" id="st-open" aria-pressed="true">Abertas</button>
+        <button type="button" id="st-done" aria-pressed="false">Concluídas</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="Buscar tarefa" aria-label="Buscar tarefa">
+    </div>
+    <div class="filters">
+      <select id="fproject" aria-label="Filtrar por projeto"></select>
+      <select id="fclient" aria-label="Filtrar por cliente"></select>
+      <select id="fassignee" aria-label="Filtrar por responsável"></select>
+      <select id="fdue" aria-label="Filtrar por prazo">
+        <option value="">Qualquer prazo</option>
+        <option value="late">Só atrasadas</option>
+        <option value="today">Só para hoje</option>
+        <option value="lateToday">Atrasadas e para hoje</option>
+        <option value="week">Próximos 7 dias</option>
+        <option value="none">Sem data</option>
+      </select>
+      <select id="fprio" aria-label="Filtrar por prioridade">
+        <option value="">Qualquer prioridade</option>
+        <option value="1">Urgente</option>
+        <option value="2">Alta</option>
+        <option value="3">Média</option>
+        <option value="4">Baixa</option>
+        <option value="0">Sem prioridade</option>
+      </select>
+      <select id="fview" aria-label="Agrupar tarefas">
+        <option value="date">Agrupar por data</option>
+        <option value="project">Agrupar por projeto</option>
+        <option value="client">Agrupar por cliente</option>
+        <option value="priority">Agrupar por prioridade</option>
+      </select>
+      <button type="button" class="sortbtn" id="fsort">Data ↑</button>
+      <button type="button" class="linkbtn" id="wsedit">Ambiente</button>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<button class="fab" id="fab" type="button" aria-label="Nova tarefa" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- Folha: tarefa -->
+<div class="overlay" id="ov-task" hidden>
+  <form class="sheet" id="taskform" autocomplete="off">
+    <div class="grab"></div>
+    <h3 id="tf-title">Nova tarefa</h3>
+    <div class="field"><label for="f-title">Título</label><input id="f-title" required maxlength="300" placeholder="O que precisa ser feito?"></div>
+    <div class="field"><label for="f-desc">Descrição</label><textarea id="f-desc" maxlength="5000" placeholder="Detalhes da tarefa"></textarea></div>
+    <div class="row2">
+      <div class="field"><label for="f-due">Data de conclusão</label><input id="f-due" type="date"></div>
+      <div class="field"><label for="f-prio">Prioridade</label>
+        <select id="f-prio"><option value="">Sem prioridade</option><option value="1">Urgente</option><option value="2">Alta</option><option value="3">Média</option><option value="4">Baixa</option></select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="f-project">Projeto</label><input id="f-project" list="dl-project" maxlength="120"><datalist id="dl-project"></datalist></div>
+      <div class="field" id="clientwrap"><label for="f-client">Cliente</label><input id="f-client" list="dl-client" maxlength="120"><datalist id="dl-client"></datalist></div>
+    </div>
+    <div class="field"><label for="f-ws">Ambiente</label><select id="f-ws"></select></div>
+    <div class="field"><label id="f-assignees-l">Responsáveis</label><div class="people" id="f-assignees" role="group" aria-labelledby="f-assignees-l"></div></div>
+    <div class="field"><label for="f-notes">Observações</label><textarea id="f-notes" maxlength="20000" placeholder="Anotações complementares, andamento, links…"></textarea></div>
+    <label class="toggle" id="donewrap"><input type="checkbox" id="f-done"> Concluída</label>
+    <div class="stamp" id="f-stamp"></div>
+    <div class="actions">
+      <button type="button" class="btn danger" id="f-del">Excluir</button>
+      <div class="right">
+        <button type="button" class="btn secondary" id="f-cancel">Cancelar</button>
+        <button type="submit" class="btn" id="f-save">Salvar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Folha: ambiente -->
+<div class="overlay" id="ov-ws" hidden>
+  <form class="sheet" id="wsform" autocomplete="off">
+    <div class="grab"></div>
+    <h3 id="wf-title">Novo ambiente</h3>
+    <div class="field"><label for="w-name">Nome</label><input id="w-name" required maxlength="60" placeholder="Ex.: Casa, Trabalho, Freelas"></div>
+    <div class="field">
+      <label>Tipo</label>
+      <div class="kind">
+        <label><input type="radio" name="wkind" value="pessoal" id="w-pessoal"><span>Pessoal<small>Sem campo de cliente</small></span></label>
+        <label><input type="radio" name="wkind" value="trabalho" id="w-trabalho"><span>Trabalho<small>Mostra o campo Cliente</small></span></label>
+      </div>
+    </div>
+    <div class="field" id="w-members-wrap">
+      <label>Membros</label>
+      <div class="memberlist" id="w-members"></div>
+      <div class="invite">
+        <input id="w-invite" type="email" placeholder="Email do Google da pessoa" aria-label="Email para convidar">
+        <button type="button" class="btn secondary" id="w-invite-btn">Convidar</button>
+      </div>
+      <span class="hint" id="w-hint"></span>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn danger" id="w-del">Excluir ambiente</button>
+      <div class="right">
+        <button type="button" class="btn secondary" id="w-cancel">Fechar</button>
+        <button type="submit" class="btn" id="w-save">Salvar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Folha: perfil -->
+<div class="overlay" id="ov-me" hidden>
+  <form class="sheet" id="meform" autocomplete="off">
+    <div class="grab"></div>
+    <h3>Seu perfil</h3>
+    <div class="field"><label for="p-name">Nome que aparece para os outros</label><input id="p-name" maxlength="60" required></div>
+    <div class="stamp" id="p-email"></div>
+    <div class="actions">
+      <button type="button" class="btn secondary" id="p-logout">Sair</button>
+      <div class="right">
+        <button type="button" class="btn secondary" id="p-cancel">Fechar</button>
+        <button type="submit" class="btn">Salvar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
