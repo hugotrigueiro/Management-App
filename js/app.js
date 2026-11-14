@@ -14,7 +14,7 @@ const S = {
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
   editing: null, pick: [], editingWs: null,
   selecting: false, sel: new Set(), visibleIds: [], bulkPick: [],
-  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null
+  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: []
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -133,14 +133,16 @@ async function loadAll() {
   if (loading) { scheduleReload(); return loading; }
   loading = (async () => {
     try {
-      const [profiles, workspaces, members, tasks, assignees, items] = await Promise.all([
-        fetchAll("profiles", "id,email,display_name,avatar_url"),
+      const [profiles, workspaces, members, tasks, assignees, items, rules] = await Promise.all([
+        fetchAll("profiles", "id,email,display_name,avatar_url,telegram_chat_id"),
         fetchAll("workspaces", "*", "sort_order"),
         fetchAll("workspace_members", "workspace_id,user_id,role"),
         fetchAll("tasks", "*", "id"),
         fetchAll("task_assignees", "task_id,user_id"),
-        fetchAll("task_checklist_items", "id,task_id,text,done,position", "position")
+        fetchAll("task_checklist_items", "id,task_id,text,done,position", "position"),
+        fetchAll("notification_rules", "*", "created_at")
       ]);
+      S.rules = rules;
       const cl = new Map();
       for (const it of items) { if (!cl.has(it.task_id)) cl.set(it.task_id, []); cl.get(it.task_id).push(it); }
       S.checklist = cl;
@@ -155,6 +157,7 @@ async function loadAll() {
       S.loaded = true;
       render();
       if (!$("ov-ws").hidden && S.editingWs) renderMembers();
+      if (!$("ov-notif").hidden) renderNotif();
     } catch (e) {
       console.error(e);
       if (!S.loaded) $("main").replaceChildren(h("div", { class: "notice" }, [h("strong", { text: "Não consegui carregar as tarefas." }), h("span", { text: "Verifique a conexão. Vou tentar de novo em instantes." })]));
@@ -169,7 +172,7 @@ let channel = null;
 function subscribe() {
   if (channel) return;
   channel = sb.channel("tudo");
-  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles"]) {
+  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles", "notification_rules"]) {
     channel.on("postgres_changes", { event: "*", schema: "public", table }, scheduleReload);
   }
   channel.subscribe();
@@ -893,18 +896,136 @@ $("w-del").addEventListener("click", async () => {
   closeWs(); S.ws = null; toast("Ambiente excluído."); loadAll();
 });
 
+/* ================= Notificações ================= */
+async function callNotify(body) {
+  const { data, error } = await sb.functions.invoke("telegram-notify", { body });
+  if (error) {
+    let msg = error.message;
+    try { const j = await error.context.json(); msg = j.error || msg; } catch { /* sem corpo */ }
+    throw new Error(msg);
+  }
+  return data;
+}
+const HOURS = Array.from({ length: 24 }, (_, i) => [String(i), `${String(i).padStart(2, "0")}h`]);
+const WD_FULL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+function selectEl(options, value, onchange, disabled) {
+  const el = h("select", { disabled, onchange: (e) => onchange(e.target.value) }, options.map(([v, l]) => h("option", { value: v, text: l })));
+  el.value = String(value ?? ""); return el;
+}
+function destText(ws) {
+  if (ws.telegram_chat_id) return `Grupo do Telegram (ID ${ws.telegram_chat_id}).`;
+  const ms = membersOf(ws.id);
+  const label = (id) => { const p = S.profiles.get(id); return nameOf(id) + (p && p.telegram_chat_id ? "" : " (sem chat ID no perfil)"); };
+  if (ms.length === 1) return `Privado de ${label(ms[0].user_id)}.`;
+  return `Privado de cada pessoa: ${ms.map((m) => label(m.user_id)).join(", ")}.`;
+}
+async function updateRule(r, patch) {
+  Object.assign(r, patch); renderNotif();
+  const { error } = await sb.from("notification_rules").update(patch).eq("id", r.id);
+  if (error) { fail(error); loadAll(); }
+}
+function renderNotif() {
+  const ws = currentWs(); if (!ws) return;
+  const owner = isOwner(ws.id);
+  $("nf-title").textContent = `Notificações · ${ws.name}`;
+  $("nf-dest").textContent = destText(ws);
+  $("nf-group").value = ws.telegram_chat_id || ""; $("nf-group").disabled = !owner;
+  $("nf-group-save").hidden = !owner;
+  $("nf-add").hidden = !owner;
+  $("nf-hint").textContent = owner
+    ? "Os horários são de Brasília. O resumo é enviado uma vez por dia, no horário escolhido (pode chegar até 15 minutos depois)."
+    : "Só o dono do ambiente altera as notificações.";
+  const rules = S.rules.filter((r) => r.workspace_id === ws.id);
+  const box = $("nf-rules");
+  if (!rules.length) { box.replaceChildren(h("p", { class: "nf-empty", text: "Nenhum resumo configurado ainda." })); return; }
+  box.replaceChildren(...rules.map((r) => {
+    const on = h("input", { type: "checkbox", disabled: !owner, "aria-label": "Ativo" }); on.checked = r.enabled;
+    on.addEventListener("change", () => updateRule(r, { enabled: on.checked }));
+    const overdue = h("input", { type: "checkbox", disabled: !owner }); overdue.checked = r.include_overdue;
+    overdue.addEventListener("change", () => updateRule(r, { include_overdue: overdue.checked }));
+    const mine = h("input", { type: "checkbox", disabled: !owner }); mine.checked = r.only_mine;
+    mine.addEventListener("change", () => updateRule(r, { only_mine: mine.checked }));
+    const del = h("button", { type: "button", class: "btn danger", text: "Excluir", hidden: !owner, onclick: async () => {
+      if (!del.classList.contains("armed")) { del.classList.add("armed"); del.textContent = "Confirmar"; return; }
+      const { error } = await sb.from("notification_rules").delete().eq("id", r.id);
+      if (error) return fail(error);
+      S.rules = S.rules.filter((x) => x !== r); renderNotif();
+    } });
+    const test = h("button", { type: "button", class: "btn secondary", text: "Enviar teste agora", onclick: async () => {
+      test.disabled = true; test.textContent = "Enviando…";
+      try {
+        const res = await callNotify({ mode: "test", rule_id: r.id });
+        if (res && res.sent) toast(`Enviado para ${res.sent} ${res.sent === 1 ? "destino" : "destinos"}.`);
+        else toast((res && (res.note || (res.errors || [])[0])) || "Nada foi enviado.");
+      } catch (e) { toast("Não enviou: " + e.message); }
+      finally { test.disabled = false; test.textContent = "Enviar teste agora"; }
+    } });
+    return h("div", { class: "nf-rule" + (r.enabled ? "" : " off") }, [
+      h("div", { class: "nf-row" }, [
+        h("label", {}, [on, h("strong", { text: r.kind === "daily" ? "Resumo do dia" : "Resumo da semana" })]),
+        h("span", { class: "grow" }),
+        r.kind === "weekly" ? selectEl(WD_FULL.map((l, i) => [String(i), l]), r.weekday ?? 0, (v) => updateRule(r, { weekday: Number(v) }), !owner) : null,
+        h("span", { text: "às" }),
+        selectEl(HOURS, r.hour, (v) => updateRule(r, { hour: Number(v) }), !owner)
+      ]),
+      h("div", { class: "hint", text: r.kind === "daily" ? "Tarefas com data de hoje." : "Tarefas com data nos 7 dias seguintes ao envio, separadas por dia." }),
+      h("div", { class: "nf-row" }, [
+        h("label", {}, [overdue, h("span", { text: "Incluir atrasadas" })]),
+        ws.telegram_chat_id ? null : h("label", {}, [mine, h("span", { text: "Cada pessoa recebe só as tarefas dela" })])
+      ]),
+      h("div", { class: "nf-row" }, [test, h("span", { class: "grow" }), del]),
+      r.last_sent_on ? h("div", { class: "hint", text: `Último envio automático: ${fmtDate(r.last_sent_on).toLowerCase()}` }) : null
+    ]);
+  }));
+}
+async function addRule(kind) {
+  const ws = currentWs(); if (!ws) return;
+  const row = { workspace_id: ws.id, kind, hour: kind === "daily" ? 8 : 19, weekday: kind === "weekly" ? 0 : null };
+  const { data, error } = await sb.from("notification_rules").insert(row).select("*").single();
+  if (error) return fail(error);
+  S.rules.push(data); renderNotif();
+}
+$("btn-notif").addEventListener("click", () => { renderNotif(); $("ov-notif").hidden = false; });
+$("nf-close").addEventListener("click", () => ($("ov-notif").hidden = true));
+$("nf-add-daily").addEventListener("click", () => addRule("daily"));
+$("nf-add-weekly").addEventListener("click", () => addRule("weekly"));
+$("nf-group-save").addEventListener("click", async () => {
+  const ws = currentWs(); const v = $("nf-group").value.trim();
+  if (v && !/^-?\d{4,20}$/.test(v)) { toast("O ID do grupo é um número, geralmente começa com -100."); return; }
+  const { error } = await sb.from("workspaces").update({ telegram_chat_id: v || null }).eq("id", ws.id);
+  if (error) return fail(error);
+  ws.telegram_chat_id = v || null; renderNotif(); toast(v ? "Grupo salvo." : "Grupo removido.");
+});
+
 /* ================= Perfil ================= */
 $("btn-me").addEventListener("click", () => {
   $("p-name").value = (S.me && S.me.display_name) || "";
+  $("p-chat").value = (S.me && S.me.telegram_chat_id) || "";
   $("p-email").textContent = S.me ? `Conectado como ${S.me.email}` : "";
   $("ov-me").hidden = false;
 });
 $("p-cancel").addEventListener("click", () => ($("ov-me").hidden = true));
 $("meform").addEventListener("submit", async (ev) => {
   ev.preventDefault();
-  const { error } = await sb.from("profiles").update({ display_name: $("p-name").value.trim() }).eq("id", S.uid);
+  const chat = $("p-chat").value.trim();
+  if (chat && !/^-?\d{4,20}$/.test(chat)) { toast("O chat ID é só número."); return; }
+  const { error } = await sb.from("profiles").update({ display_name: $("p-name").value.trim(), telegram_chat_id: chat || null }).eq("id", S.uid);
   if (error) return fail(error);
   $("ov-me").hidden = true; loadAll();
+});
+$("p-chat-test").addEventListener("click", async () => {
+  const chat = $("p-chat").value.trim();
+  if (!/^-?\d{4,20}$/.test(chat)) { toast("Digite o seu chat ID (só números)."); return; }
+  const b = $("p-chat-test"); b.disabled = true;
+  try {
+    if (!S.me || S.me.telegram_chat_id !== chat) {
+      const { error } = await sb.from("profiles").update({ telegram_chat_id: chat }).eq("id", S.uid);
+      if (error) throw error;
+      if (S.me) S.me.telegram_chat_id = chat;
+    }
+    await callNotify({ mode: "hello" });
+    toast("Mensagem enviada. Confira o Telegram.");
+  } catch (e) { toast("Não enviou: " + e.message); } finally { b.disabled = false; }
 });
 $("p-logout").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
 
@@ -925,7 +1046,7 @@ $("btn-filters").addEventListener("click", () => {
   $("filters").classList.toggle("open", open); $("btn-filters").setAttribute("aria-expanded", String(open));
 });
 $("fclear").addEventListener("click", () => { S.project = S.client = S.assignee = S.due = S.prio = ""; render(); });
-for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)]]) {
+for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)], ["ov-notif", () => ($("ov-notif").hidden = true)]]) {
   $(ov).addEventListener("click", (e) => { if (e.target === $(ov)) close(); });
 }
 document.addEventListener("keydown", (e) => {

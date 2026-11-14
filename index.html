@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=6">
+<link rel="stylesheet" href="css/app.css?v=7">
 </head>
 <body>
 <!-- Tela de login -->
@@ -40,6 +40,10 @@
         <button type="button" class="iconbtn" id="wsedit" aria-label="Ambiente e membros">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Membros</span>
+        </button>
+        <button type="button" class="iconbtn" id="btn-notif" aria-label="Notificações do ambiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Notificações</span>
         </button>
         <button type="button" class="me" id="btn-me" aria-label="Seu perfil"><img id="me-avatar" alt="" width="30" height="30"><span id="me-name"></span></button>
       </div>
@@ -231,12 +235,47 @@
   </form>
 </div>
 
+<!-- Folha: notificações -->
+<div class="overlay" id="ov-notif" hidden>
+  <div class="sheet compact" role="dialog" aria-labelledby="nf-title">
+    <div class="grab"></div>
+    <h3 id="nf-title">Notificações</h3>
+    <section class="nf-block">
+      <h4>Para onde vão as mensagens</h4>
+      <p class="nf-dest" id="nf-dest"></p>
+      <div class="sub-add" id="nf-group-wrap">
+        <input id="nf-group" inputmode="numeric" placeholder="ID do grupo do Telegram (opcional)" aria-label="ID do grupo do Telegram">
+        <button type="button" class="btn secondary" id="nf-group-save">Salvar</button>
+      </div>
+      <p class="hint">Com um grupo preenchido, tudo deste ambiente vai para o grupo. Sem grupo: se o ambiente tem uma pessoa, vai para o privado dela; se tem várias, cada uma recebe no privado (precisa ter o chat ID salvo no perfil).</p>
+    </section>
+    <section class="nf-block">
+      <h4>Resumos automáticos</h4>
+      <div class="nf-rules" id="nf-rules"></div>
+      <div class="nf-add" id="nf-add">
+        <button type="button" class="btn secondary" id="nf-add-daily">+ Resumo do dia</button>
+        <button type="button" class="btn secondary" id="nf-add-weekly">+ Resumo da semana</button>
+      </div>
+      <p class="hint" id="nf-hint"></p>
+    </section>
+    <div class="actions"><span></span><div class="right"><button type="button" class="btn secondary" id="nf-close">Fechar</button></div></div>
+  </div>
+</div>
+
 <!-- Folha: perfil -->
 <div class="overlay" id="ov-me" hidden>
   <form class="sheet" id="meform" autocomplete="off">
     <div class="grab"></div>
     <h3>Seu perfil</h3>
     <div class="field"><label for="p-name">Nome que aparece para os outros</label><input id="p-name" maxlength="60" required></div>
+    <div class="field">
+      <label for="p-chat">Seu chat ID no Telegram</label>
+      <div class="sub-add">
+        <input id="p-chat" inputmode="numeric" placeholder="Ex.: 123456789" maxlength="20">
+        <button type="button" class="btn secondary" id="p-chat-test">Enviar teste</button>
+      </div>
+      <span class="hint">Usado para mensagens no privado. Para descobrir o seu, mande uma mensagem ao @userinfobot no Telegram. Antes, mande qualquer mensagem para o bot do app, senão o Telegram não deixa ele te escrever.</span>
+    </div>
     <div class="stamp" id="p-email"></div>
     <div class="actions">
       <button type="button" class="btn secondary" id="p-logout">Sair</button>
@@ -249,6 +288,6 @@
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="js/app.js?v=6"></script>
+<script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>

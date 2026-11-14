@@ -251,3 +251,18 @@ section.late h2 { color: var(--danger); }
   .tools .seg button { padding: 6px 9px; }
   .toolbtn { padding: 7px 10px; }
 }
+
+/* Notificações */
+.nf-block { display: grid; gap: 8px; }
+.nf-block h4 { margin: 0; font-size: 14px; }
+.nf-dest { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--ink); font-size: 14px; }
+.nf-rules { display: grid; gap: 8px; }
+.nf-rule { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; background: var(--bg); }
+.nf-rule.off { opacity: .6; }
+.nf-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 14px; }
+.nf-row select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; }
+.nf-row label { display: inline-flex; align-items: center; gap: 6px; }
+.nf-row .grow { flex: 1; }
+.nf-row .btn { padding: 7px 10px; font-size: 13px; }
+.nf-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.nf-empty { color: var(--muted); font-size: 14px; }
