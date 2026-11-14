@@ -14,7 +14,7 @@ const S = {
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
   editing: null, pick: [], editingWs: null,
   selecting: false, sel: new Set(), visibleIds: [], bulkPick: [],
-  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: []
+  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: [], sources: []
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -133,16 +133,17 @@ async function loadAll() {
   if (loading) { scheduleReload(); return loading; }
   loading = (async () => {
     try {
-      const [profiles, workspaces, members, tasks, assignees, items, rules] = await Promise.all([
+      const [profiles, workspaces, members, tasks, assignees, items, rules, sources] = await Promise.all([
         fetchAll("profiles", "id,email,display_name,avatar_url,telegram_chat_id"),
         fetchAll("workspaces", "*", "sort_order"),
         fetchAll("workspace_members", "workspace_id,user_id,role"),
         fetchAll("tasks", "*", "id"),
         fetchAll("task_assignees", "task_id,user_id"),
         fetchAll("task_checklist_items", "id,task_id,text,done,position", "position"),
-        fetchAll("notification_rules", "*", "created_at")
+        fetchAll("notification_rules", "*", "created_at"),
+        fetchAll("sheet_sources", "*")
       ]);
-      S.rules = rules;
+      S.rules = rules; S.sources = sources;
       const cl = new Map();
       for (const it of items) { if (!cl.has(it.task_id)) cl.set(it.task_id, []); cl.get(it.task_id).push(it); }
       S.checklist = cl;
@@ -172,7 +173,7 @@ let channel = null;
 function subscribe() {
   if (channel) return;
   channel = sb.channel("tudo");
-  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles", "notification_rules"]) {
+  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles", "notification_rules", "sheet_sources"]) {
     channel.on("postgres_changes", { event: "*", schema: "public", table }, scheduleReload);
   }
   channel.subscribe();
@@ -275,6 +276,7 @@ function renderFilters() {
   $("st-open").setAttribute("aria-pressed", String(S.status === "open"));
   $("st-done").setAttribute("aria-pressed", String(S.status === "done"));
   $("wsedit").hidden = !ws;
+  $("btn-sync").hidden = !(ws && S.sources.some((x) => x.workspace_id === ws.id && x.enabled));
   const active = [S.project, S.client, S.assignee, S.status === "open" ? S.due : "", S.prio].filter(Boolean).length;
   $("filters-count").hidden = !active; $("filters-count").textContent = String(active);
   $("fclear").hidden = !active;
@@ -359,7 +361,8 @@ function render() {
       h("span", { class: "pill", text: `${openAll.length} ${openAll.length === 1 ? "aberta" : "abertas"}` }),
       lateN ? h("button", { type: "button", class: "pill late", "aria-pressed": String(S.due === "late"), text: `${lateN} ${lateN === 1 ? "atrasada" : "atrasadas"}`, onclick: () => { S.due = S.due === "late" ? "" : "late"; render(); } }) : null,
       todayN ? h("button", { type: "button", class: "pill today", "aria-pressed": String(S.due === "today"), text: `${todayN} para hoje`, onclick: () => { S.due = S.due === "today" ? "" : "today"; render(); } }) : null,
-      S.due ? h("button", { type: "button", class: "pill", text: "Limpar prazo ✕", onclick: () => { S.due = ""; render(); } }) : null
+      S.due ? h("button", { type: "button", class: "pill", text: "Limpar prazo ✕", onclick: () => { S.due = ""; render(); } }) : null,
+      syncInfo(ws)
     ]));
   }
 
@@ -895,6 +898,34 @@ $("w-del").addEventListener("click", async () => {
   const { error } = await sb.from("workspaces").delete().eq("id", w.id);
   if (error) return fail(error);
   closeWs(); S.ws = null; toast("Ambiente excluído."); loadAll();
+});
+
+/* ================= Sincronização com planilha ================= */
+function syncInfo(ws) {
+  const src = S.sources.find((x) => x.workspace_id === ws.id);
+  if (!src || !src.last_run_at) return src ? h("span", { class: "syncinfo", text: "Planilha: sincroniza todo dia às 19h30" }) : null;
+  const r = src.last_result || {};
+  const when = `${fmtDate(ymd(new Date(src.last_run_at))).toLowerCase()} às ${fmtStamp(src.last_run_at).split(", ")[1]}`;
+  if (!r.ok) return h("span", { class: "syncinfo err", title: r.error || "", text: `Planilha: erro na última sincronização (${when})` });
+  return h("span", { class: "syncinfo", text: `Planilha: ${when} · ${r.created} ${r.created === 1 ? "nova" : "novas"}, ${r.completed} ${r.completed === 1 ? "concluída" : "concluídas"}` });
+}
+$("btn-sync").addEventListener("click", async () => {
+  const ws = currentWs(); const b = $("btn-sync");
+  if (!ws || b.classList.contains("spinning")) return;
+  b.classList.add("spinning"); b.disabled = true;
+  try {
+    const { data, error } = await sb.functions.invoke("sheet-sync", { body: { mode: "run", workspace_id: ws.id } });
+    if (error) {
+      let msg = error.message;
+      try { const j = await error.context.json(); msg = j.error || msg; } catch { /* sem corpo */ }
+      throw new Error(msg);
+    }
+    toast(data.created || data.completed
+      ? `Planilha sincronizada: ${data.created} ${data.created === 1 ? "nova" : "novas"}, ${data.completed} ${data.completed === 1 ? "concluída" : "concluídas"}.`
+      : "Planilha sincronizada. Nada novo.");
+    await loadAll();
+  } catch (e) { toast("Não sincronizou: " + e.message); await loadAll(); }
+  finally { b.classList.remove("spinning"); b.disabled = false; }
 });
 
 /* ================= Notificações ================= */
