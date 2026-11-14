@@ -204,14 +204,64 @@ function fillSelect(sel, first, values, current) {
   return sel.value;
 }
 
+// Uma tarefa passa nos filtros atuais? "except" ignora um filtro (usado para montar as opções desse filtro).
+function matches(t, ws, except) {
+  const t0 = today(), wk = addDays(7), q = S.q.trim().toLowerCase();
+  if (S.status === "open" ? t.done : !t.done) return false;
+  if (except !== "project" && S.project && t.project.trim().toLowerCase() !== S.project.toLowerCase()) return false;
+  if (except !== "client" && isWork(ws) && S.client && t.client.trim().toLowerCase() !== S.client.toLowerCase()) return false;
+  if (except !== "assignee" && S.assignee) {
+    const as = assigneesOf(t.id);
+    if (S.assignee === "me" && !as.includes(S.uid)) return false;
+    if (S.assignee === "none" && as.length) return false;
+    if (!["me", "none"].includes(S.assignee) && !as.includes(S.assignee)) return false;
+  }
+  if (except !== "prio" && (S.prio === "0" ? t.priority : S.prio && String(t.priority) !== S.prio)) return false;
+  if (except !== "due" && S.status === "open" && S.due) {
+    const d = t.due_date || "";
+    if (S.due === "late" && !(d && d < t0)) return false;
+    if (S.due === "today" && d !== t0) return false;
+    if (S.due === "lateToday" && !(d && d <= t0)) return false;
+    if (S.due === "week" && !(d && d > t0 && d <= wk)) return false;
+    if (S.due === "none" && d) return false;
+  }
+  if (q && ![t.title, t.description, t.notes, t.project, t.client].join(" ").toLowerCase().includes(q)) return false;
+  return true;
+}
+// Opções com contagem, só do que existe nas tarefas que passam pelos outros filtros.
+function countBy(tasks, keyFn) {
+  const m = new Map();
+  for (const t of tasks) for (const raw of [].concat(keyFn(t))) {
+    const v = (raw || "").trim(); if (!v) continue;
+    const k = v.toLowerCase();
+    if (!m.has(k)) m.set(k, { label: v, n: 0 }); m.get(k).n++;
+  }
+  return m;
+}
+function optionsWithCount(m, current) {
+  const cur = (current || "").toLowerCase();
+  const out = [...m.entries()].sort((a, b) => a[1].label.localeCompare(b[1].label, "pt-BR"))
+    .map(([k, o]) => [k === cur ? current : o.label, `${o.label} (${o.n})`]);
+  if (current && !m.has(current.toLowerCase())) out.unshift([current, `${current} (0)`]);
+  return out;
+}
+
 function renderFilters() {
-  const ws = currentWs(); const list = ws ? tasksIn(ws.id) : [];
-  S.project = fillSelect($("fproject"), "Todos os projetos", uniq(list.map((t) => t.project)).map((p) => [p, p]), S.project);
+  const ws = currentWs(); const all = ws ? tasksIn(ws.id) : [];
+  const pool = (except) => all.filter((t) => matches(t, ws, except));
+  S.project = fillSelect($("fproject"), "Todos os projetos", optionsWithCount(countBy(pool("project"), (t) => t.project), S.project), S.project);
   $("fclient").hidden = !isWork(ws);
-  S.client = fillSelect($("fclient"), "Todos os clientes", uniq(list.map((t) => t.client)).map((c) => [c, c]), S.client);
-  const people = ws ? membersOf(ws.id).map((m) => m.user_id).filter((id) => id !== S.uid) : [];
-  S.assignee = fillSelect($("fassignee"), "Todos os responsáveis",
-    [["me", "Minhas tarefas"], ...people.map((id) => [id, nameOf(id)]), ["none", "Sem responsável"]], S.assignee);
+  S.client = fillSelect($("fclient"), "Todos os clientes", optionsWithCount(countBy(pool("client"), (t) => t.client), S.client), S.client);
+  const ap = pool("assignee");
+  const byPerson = new Map(); let none = 0;
+  for (const t of ap) { const as = assigneesOf(t.id); if (!as.length) none++; for (const id of as) byPerson.set(id, (byPerson.get(id) || 0) + 1); }
+  const people = [...byPerson.keys()].filter((id) => id !== S.uid).sort((a, b) => nameOf(a).localeCompare(nameOf(b), "pt-BR"));
+  const aOpts = [];
+  if (byPerson.has(S.uid) || S.assignee === "me") aOpts.push(["me", `Minhas tarefas (${byPerson.get(S.uid) || 0})`]);
+  for (const id of people) aOpts.push([id, `${nameOf(id)} (${byPerson.get(id)})`]);
+  if (S.assignee && !["me", "none"].includes(S.assignee) && !byPerson.has(S.assignee)) aOpts.push([S.assignee, `${nameOf(S.assignee)} (0)`]);
+  if (none || S.assignee === "none") aOpts.push(["none", `Sem responsável (${none})`]);
+  S.assignee = fillSelect($("fassignee"), "Todos os responsáveis", aOpts, S.assignee);
   $("fdue").hidden = S.status !== "open"; $("fdue").value = S.due; $("fdue").classList.toggle("on", !!S.due);
   $("fprio").value = S.prio; $("fprio").classList.toggle("on", !!S.prio);
   $("fview").value = S.view;
@@ -295,26 +345,7 @@ function render() {
 
   const q = S.q.trim().toLowerCase(); const t0 = today(); const wk = addDays(7);
   const all = tasksIn(ws.id);
-  const list = all.filter((t) => {
-    if (S.status === "open" ? t.done : !t.done) return false;
-    if (S.project && t.project.trim().toLowerCase() !== S.project.toLowerCase()) return false;
-    if (isWork(ws) && S.client && t.client.trim().toLowerCase() !== S.client.toLowerCase()) return false;
-    const as = assigneesOf(t.id);
-    if (S.assignee === "me" && !as.includes(S.uid)) return false;
-    if (S.assignee === "none" && as.length) return false;
-    if (S.assignee && !["me", "none"].includes(S.assignee) && !as.includes(S.assignee)) return false;
-    if (S.prio === "0" ? t.priority : S.prio && String(t.priority) !== S.prio) return false;
-    if (S.status === "open" && S.due) {
-      const d = t.due_date || "";
-      if (S.due === "late" && !(d && d < t0)) return false;
-      if (S.due === "today" && d !== t0) return false;
-      if (S.due === "lateToday" && !(d && d <= t0)) return false;
-      if (S.due === "week" && !(d && d > t0 && d <= wk)) return false;
-      if (S.due === "none" && d) return false;
-    }
-    if (q && ![t.title, t.description, t.notes, t.project, t.client].join(" ").toLowerCase().includes(q)) return false;
-    return true;
-  });
+  const list = all.filter((t) => matches(t, ws));
 
   if (S.status === "open") {
     const openAll = all.filter((t) => !t.done);
