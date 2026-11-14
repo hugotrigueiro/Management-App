@@ -218,3 +218,36 @@ section.late h2 { color: var(--danger); }
 .citem .rm:hover { color: var(--danger); }
 .check-add { border: 1px dashed var(--line); background: transparent; border-radius: 8px; padding: 7px 10px; width: 100%; }
 .tag.prog.complete { background: var(--ok); color: #fff; border-color: transparent; }
+
+/* Subtarefas (janela) */
+.subtasks { display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--bg); }
+.sub-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; font-size: 14px; }
+.sub-count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sub-bar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.sub-bar span { display: block; height: 100%; background: var(--ok); width: 0; transition: width .2s; }
+.subtasks .citem { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
+.sub-add { display: flex; gap: 8px; }
+.sub-add input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+.sub-add .btn { padding: 8px 12px; white-space: nowrap; }
+.subtasks .hint { margin: 0; }
+
+/* Subtarefas (cartão) */
+.task { grid-template-columns: 36px 1fr; }
+.subs { grid-column: 2; display: grid; gap: 2px; margin-top: 2px; }
+.sub { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 2px 0; cursor: pointer; }
+.sub input { width: 16px; height: 16px; accent-color: var(--ok); flex: none; margin: 0; }
+.sub.done span { text-decoration: line-through; color: var(--muted); }
+.tag.prog { cursor: pointer; }
+.task.armed .check { border-color: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 30%, transparent); }
+
+/* Correções de layout no celular */
+.sheet > *, .subtasks > *, .advanced > *, .field > * { min-width: 0; }
+.sheet { overflow-x: hidden; }
+.citem { min-width: 0; }
+@media (max-width: 899px) {
+  .tools .search { order: 3; flex: 1 1 150px; min-width: 0; width: 0; }
+  #btn-select { order: 4; }
+  #btn-filters { margin-left: auto; }
+  .tools .seg button { padding: 6px 9px; }
+  .toolbtn { padding: 7px 10px; }
+}

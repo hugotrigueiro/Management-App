@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=5">
 </head>
 <body>
 <!-- Tela de login -->
@@ -135,10 +135,15 @@
       <label class="inline">até <input id="f-rep-until" type="date"> <small>(opcional)</small></label>
       <p class="hint" id="f-rep-hint"></p>
     </div>
-    <div class="field">
-      <label id="f-check-l">Checklist <span class="hint" id="f-check-count"></span></label>
+    <div class="subtasks">
+      <div class="sub-head"><span id="f-check-l">Subtarefas</span><span class="sub-count" id="f-check-count"></span></div>
+      <div class="sub-bar" id="f-check-bar" hidden><span id="f-check-fill"></span></div>
       <div class="checklist" id="f-checklist" aria-labelledby="f-check-l"></div>
-      <input class="check-add" id="f-check-add" maxlength="300" placeholder="Adicionar item e apertar Enter" aria-label="Novo item do checklist">
+      <div class="sub-add">
+        <input id="f-check-add" maxlength="300" placeholder="Nova subtarefa" aria-label="Nova subtarefa">
+        <button type="button" class="btn secondary" id="f-check-add-btn">+ Adicionar</button>
+      </div>
+      <p class="hint">Com subtarefas, a tarefa só é concluída quando todas estiverem feitas, e conclui sozinha quando a última for marcada.</p>
     </div>
     <div class="field"><label id="f-assignees-l">Responsáveis</label><div class="people" id="f-assignees" role="group" aria-labelledby="f-assignees-l"></div></div>
     <button type="button" class="linkbtn more" id="f-more" aria-expanded="false">Mais opções</button>
@@ -244,6 +249,6 @@
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="js/app.js"></script>
+<script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>

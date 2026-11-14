@@ -14,7 +14,7 @@ const S = {
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
   editing: null, pick: [], editingWs: null,
   selecting: false, sel: new Set(), visibleIds: [], bulkPick: [],
-  checklist: new Map(), draft: [], repDays: []
+  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -100,7 +100,8 @@ function nameOf(id, short) {
 function avatar(id) {
   const p = S.profiles.get(id);
   if (p && p.avatar_url) return h("img", { src: p.avatar_url, alt: "", referrerpolicy: "no-referrer" });
-  const n = nameOf(id, true);
+  const pr = S.profiles.get(id);
+  const n = (pr && (pr.display_name || pr.email)) || "?";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#6b7a99"/><text x="12" y="16" font-size="11" text-anchor="middle" fill="#fff" font-family="sans-serif">${(n[0] || "?").toUpperCase()}</text></svg>`;
   return h("img", { src: "data:image/svg+xml;utf8," + encodeURIComponent(svg), alt: "" });
 }
@@ -238,7 +239,7 @@ function taskCard(t, ws) {
     "aria-label": S.selecting ? (sel ? "Desmarcar" : "Selecionar") : t.done ? "Reabrir tarefa" : "Concluir tarefa",
     onclick: () => (S.selecting ? toggleSel(t.id) : toggleDone(t)) });
   check.innerHTML = CHECK_SVG;
-  return h("div", { class: "task" + (t.done ? " done" : "") + (late ? " is-late" : "") + (S.selecting ? " selecting" : "") + (sel ? " selected" : "") }, [
+  return h("div", { class: "task" + (t.done ? " done" : "") + (late ? " is-late" : "") + (S.selecting ? " selecting" : "") + (sel ? " selected" : "") + (S.armed === t.id ? " armed" : "") }, [
     check,
     h("button", { type: "button", class: "body", onclick: () => (S.selecting ? toggleSel(t.id) : openTask(t)) }, [
       h("span", { class: "title", text: t.title }),
@@ -251,12 +252,19 @@ function taskCard(t, ws) {
         isWork(ws) && t.client ? h("span", { class: "tag client", text: t.client }) : null,
         t.repeat_freq ? h("span", { class: "tag", title: "Tarefa recorrente", text: "↻ " + repeatLabel(t) }) : null,
         (() => { const it = S.checklist.get(t.id) || []; if (!it.length) return null; const d = it.filter((x) => x.done).length;
-          return h("span", { class: "tag prog" + (d === it.length ? " complete" : ""), text: `☑ ${d}/${it.length}` }); })(),
+          return h("span", { class: "tag prog" + (d === it.length ? " complete" : ""), role: "button", tabindex: "0",
+            title: subsOpen(t) ? "Esconder subtarefas" : "Mostrar subtarefas", text: `☑ ${d}/${it.length} ${subsOpen(t) ? "▴" : "▾"}`,
+            onclick: (e) => { e.stopPropagation(); S.toggled.has(t.id) ? S.toggled.delete(t.id) : S.toggled.add(t.id); render(); } }); })(),
         t.notes ? h("span", { class: "tag note", text: "Observações" }) : null,
         t.done && t.done_at ? h("span", { class: "tag", text: "Concluída " + fmtDate(ymd(new Date(t.done_at))).toLowerCase() }) : null,
         as.length ? h("span", { class: "avs" }, [...as.slice(0, 3).map(avatar), h("span", { text: as.map((id) => nameOf(id, true)).join(", ") })]) : null
       ])
-    ])
+    ]),
+    subsOpen(t) ? h("div", { class: "subs" }, (S.checklist.get(t.id) || []).map((it) => {
+      const cb = h("input", { type: "checkbox", "aria-label": it.text }); cb.checked = it.done;
+      cb.addEventListener("change", () => toggleSub(it, cb.checked));
+      return h("label", { class: "sub" + (it.done ? " done" : "") }, [cb, h("span", { text: it.text })]);
+    })) : null
   ]);
 }
 
@@ -466,7 +474,11 @@ async function clDb(op) { try { const { error } = await op; if (error) throw err
 function renderChecklist() {
   const box = $("f-checklist");
   const done = S.draft.filter((x) => x.done).length;
-  $("f-check-count").textContent = S.draft.length ? `${done}/${S.draft.length}` : "";
+  const n = S.draft.length;
+  $("f-check-count").textContent = n ? `${done} de ${n} feitas` : "nenhuma ainda";
+  $("f-check-bar").hidden = !n;
+  $("f-check-fill").style.width = n ? `${Math.round((done / n) * 100)}%` : "0";
+  if (n) $("f-done").checked = done === n;
   box.replaceChildren(...S.draft.map((item) => {
     const cb = h("input", { type: "checkbox", "aria-label": "Item feito" }); cb.checked = item.done;
     cb.addEventListener("change", () => {
@@ -489,18 +501,22 @@ function removeItem(item) {
   S.draft = S.draft.filter((x) => x !== item); renderChecklist();
   if (item.id) clDb(sb.from("task_checklist_items").delete().eq("id", item.id));
 }
-$("f-check-add").addEventListener("keydown", async (e) => {
-  if (e.key !== "Enter") return;
-  e.preventDefault();
-  const v = e.target.value.trim(); if (!v) return;
-  e.target.value = "";
+$("f-done").addEventListener("change", (e) => {
+  if (e.target.checked && S.draft.length) { S.draft.forEach((x) => (x.done = true)); renderChecklist(); }
+});
+$("f-check-add-btn").addEventListener("click", addSubtask);
+$("f-check-add").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addSubtask(); } });
+async function addSubtask() {
+  const input = $("f-check-add");
+  const v = input.value.trim(); if (!v) { input.focus(); return; }
+  input.value = ""; input.focus();
   const item = { id: null, text: v, done: false, position: S.draft.length };
   S.draft.push(item); renderChecklist();
   if (S.editing) {
     const { data, error } = await sb.from("task_checklist_items").insert({ task_id: S.editing.id, text: v, position: item.position }).select("id").single();
     if (error) fail(error); else item.id = data.id;
   }
-});
+}
 
 $("taskform").addEventListener("submit", async (ev) => {
   ev.preventDefault();
@@ -554,8 +570,33 @@ $("f-del").addEventListener("click", async () => {
   closeTask(); toast("Tarefa excluída."); loadAll();
 });
 
+function subsOpen(t) {
+  const it = S.checklist.get(t.id) || [];
+  if (!it.length || S.selecting) return false;
+  const byDefault = !t.done; // abertas mostram as subtarefas; concluídas escondem
+  return S.toggled.has(t.id) ? !byDefault : byDefault;
+}
+async function toggleSub(it, done) {
+  it.done = done;
+  const list = S.checklist.get(it.task_id) || [];
+  const t = S.tasks.find((x) => x.id === it.task_id);
+  if (t && list.length) t.done = list.every((x) => x.done);
+  render();
+  const { error } = await sb.from("task_checklist_items").update({ done }).eq("id", it.id);
+  if (error) { fail(error); loadAll(); return; }
+  if (t && t.done) toast(`Concluída: ${t.title}`);
+}
+let armTimer;
 const toggling = new Set();
 async function toggleDone(t) {
+  const pending = (S.checklist.get(t.id) || []).filter((x) => !x.done).length;
+  if (!t.done && pending && S.armed !== t.id) {
+    S.armed = t.id; render();
+    toast(`Faltam ${pending} ${pending === 1 ? "subtarefa" : "subtarefas"}. Toque de novo para concluir tudo.`);
+    clearTimeout(armTimer); armTimer = setTimeout(() => { S.armed = null; render(); }, 4000);
+    return;
+  }
+  S.armed = null;
   if (toggling.has(t.id)) return; toggling.add(t.id);
   t.done = !t.done; t.done_at = t.done ? new Date().toISOString() : null; render();
   const { error } = await sb.from("tasks").update({ done: t.done }).eq("id", t.id);
