@@ -224,6 +224,7 @@ function matches(t, ws, except) {
     const d = t.due_date || "";
     if (S.due === "late" && !(d && d < t0)) return false;
     if (S.due === "today" && d !== t0) return false;
+    if (S.due === "tomorrow" && d !== addDays(1)) return false;
     if (S.due === "lateToday" && !(d && d <= t0)) return false;
     if (S.due === "week" && !(d && d > t0 && d <= wk)) return false;
     if (S.due === "none" && d) return false;
