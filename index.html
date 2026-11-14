@@ -36,7 +36,13 @@
   <header>
     <div class="top">
       <h1>Tarefas</h1>
-      <button type="button" class="me" id="btn-me" aria-label="Seu perfil"><img id="me-avatar" alt="" width="30" height="30"><span id="me-name"></span></button>
+      <div class="top-actions">
+        <button type="button" class="iconbtn" id="wsedit" aria-label="Ambiente e membros">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Membros</span>
+        </button>
+        <button type="button" class="me" id="btn-me" aria-label="Seu perfil"><img id="me-avatar" alt="" width="30" height="30"><span id="me-name"></span></button>
+      </div>
     </div>
     <div class="chips" id="wschips" role="toolbar" aria-label="Ambientes"></div>
     <div class="tools">
@@ -45,8 +51,10 @@
         <button type="button" id="st-done" aria-pressed="false">Concluídas</button>
       </div>
       <input class="search" id="q" type="search" placeholder="Buscar tarefa" aria-label="Buscar tarefa">
+      <button type="button" class="toolbtn" id="btn-filters" aria-expanded="false" aria-controls="filters">Filtros<span class="badge" id="filters-count" hidden></span></button>
+      <button type="button" class="toolbtn" id="btn-select" aria-pressed="false">Selecionar</button>
     </div>
-    <div class="filters">
+    <div class="filters" id="filters">
       <select id="fproject" aria-label="Filtrar por projeto"></select>
       <select id="fclient" aria-label="Filtrar por cliente"></select>
       <select id="fassignee" aria-label="Filtrar por responsável"></select>
@@ -73,10 +81,27 @@
         <option value="priority">Agrupar por prioridade</option>
       </select>
       <button type="button" class="sortbtn" id="fsort">Data ↑</button>
-      <button type="button" class="linkbtn" id="wsedit">Ambiente</button>
+      <button type="button" class="linkbtn" id="fclear">Limpar filtros</button>
     </div>
   </header>
+  <form class="quickadd" id="quickadd" autocomplete="off">
+    <input id="qa-title" maxlength="300" placeholder="Adicionar tarefa e apertar Enter" aria-label="Nova tarefa rápida">
+    <input id="qa-due" type="date" aria-label="Data de conclusão">
+    <button type="submit" class="btn">Adicionar</button>
+  </form>
   <main id="main"></main>
+</div>
+
+<!-- Barra de ações em massa -->
+<div class="bulkbar" id="bulkbar" hidden>
+  <span class="bulkcount" id="bulk-count">0 selecionadas</span>
+  <button type="button" class="linkbtn" id="bulk-all">Selecionar todas visíveis</button>
+  <div class="bulk-actions">
+    <button type="button" class="btn secondary" id="bulk-done">Concluir</button>
+    <button type="button" class="btn" id="bulk-edit">Editar</button>
+    <button type="button" class="btn danger" id="bulk-del">Excluir</button>
+    <button type="button" class="btn secondary" id="bulk-cancel">Cancelar</button>
+  </div>
 </div>
 
 <button class="fab" id="fab" type="button" aria-label="Nova tarefa" hidden>
@@ -85,26 +110,29 @@
 
 <!-- Folha: tarefa -->
 <div class="overlay" id="ov-task" hidden>
-  <form class="sheet" id="taskform" autocomplete="off">
+  <form class="sheet compact" id="taskform" autocomplete="off">
     <div class="grab"></div>
-    <h3 id="tf-title">Nova tarefa</h3>
-    <div class="field"><label for="f-title">Título</label><input id="f-title" required maxlength="300" placeholder="O que precisa ser feito?"></div>
-    <div class="field"><label for="f-desc">Descrição</label><textarea id="f-desc" maxlength="5000" placeholder="Detalhes da tarefa"></textarea></div>
-    <div class="row2">
-      <div class="field"><label for="f-due">Data de conclusão</label><input id="f-due" type="date"></div>
-      <div class="field"><label for="f-prio">Prioridade</label>
-        <select id="f-prio"><option value="">Sem prioridade</option><option value="1">Urgente</option><option value="2">Alta</option><option value="3">Média</option><option value="4">Baixa</option></select>
-      </div>
+    <div class="sheet-head">
+      <h3 id="tf-title">Nova tarefa</h3>
+      <label class="toggle" id="donewrap"><input type="checkbox" id="f-done"> Concluída</label>
     </div>
-    <div class="row2">
-      <div class="field"><label for="f-project">Projeto</label><input id="f-project" list="dl-project" maxlength="120"><datalist id="dl-project"></datalist></div>
-      <div class="field" id="clientwrap"><label for="f-client">Cliente</label><input id="f-client" list="dl-client" maxlength="120"><datalist id="dl-client"></datalist></div>
+    <input class="title-input" id="f-title" required maxlength="300" placeholder="O que precisa ser feito?" aria-label="Título">
+    <div class="inline-fields">
+      <label class="mini"><span>Data</span><input id="f-due" type="date"></label>
+      <label class="mini"><span>Prioridade</span>
+        <select id="f-prio"><option value="">Nenhuma</option><option value="1">Urgente</option><option value="2">Alta</option><option value="3">Média</option><option value="4">Baixa</option></select>
+      </label>
+      <label class="mini"><span>Projeto</span><input id="f-project" list="dl-project" maxlength="120"><datalist id="dl-project"></datalist></label>
+      <label class="mini" id="clientwrap"><span>Cliente</span><input id="f-client" list="dl-client" maxlength="120"><datalist id="dl-client"></datalist></label>
     </div>
-    <div class="field"><label for="f-ws">Ambiente</label><select id="f-ws"></select></div>
     <div class="field"><label id="f-assignees-l">Responsáveis</label><div class="people" id="f-assignees" role="group" aria-labelledby="f-assignees-l"></div></div>
-    <div class="field"><label for="f-notes">Observações</label><textarea id="f-notes" maxlength="20000" placeholder="Anotações complementares, andamento, links…"></textarea></div>
-    <label class="toggle" id="donewrap"><input type="checkbox" id="f-done"> Concluída</label>
-    <div class="stamp" id="f-stamp"></div>
+    <button type="button" class="linkbtn more" id="f-more" aria-expanded="false">Mais opções</button>
+    <div class="advanced" id="f-advanced" hidden>
+      <div class="field"><label for="f-desc">Descrição</label><textarea id="f-desc" maxlength="5000" rows="2" placeholder="Detalhes da tarefa"></textarea></div>
+      <div class="field"><label for="f-notes">Observações</label><textarea id="f-notes" maxlength="20000" rows="3" placeholder="Anotações complementares, andamento, links…"></textarea></div>
+      <div class="field"><label for="f-ws">Ambiente</label><select id="f-ws"></select></div>
+      <div class="stamp" id="f-stamp"></div>
+    </div>
     <div class="actions">
       <button type="button" class="btn danger" id="f-del">Excluir</button>
       <div class="right">
@@ -129,7 +157,7 @@
       </div>
     </div>
     <div class="field" id="w-members-wrap">
-      <label>Membros</label>
+      <label>Membros e convites</label>
       <div class="memberlist" id="w-members"></div>
       <div class="invite">
         <input id="w-invite" type="email" placeholder="Email do Google da pessoa" aria-label="Email para convidar">
@@ -142,6 +170,42 @@
       <div class="right">
         <button type="button" class="btn secondary" id="w-cancel">Fechar</button>
         <button type="submit" class="btn" id="w-save">Salvar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Folha: edição em massa -->
+<div class="overlay" id="ov-bulk" hidden>
+  <form class="sheet compact" id="bulkform" autocomplete="off">
+    <div class="grab"></div>
+    <h3 id="bf-title">Editar tarefas</h3>
+    <p class="hint">Só os campos que você mudar serão aplicados. O resto fica como está em cada tarefa.</p>
+    <div class="bulk-grid">
+      <label class="mini"><span>Data de conclusão</span>
+        <select id="b-due-mode"><option value="">Não alterar</option><option value="set">Definir data</option><option value="clear">Remover data</option></select>
+      </label>
+      <label class="mini" id="b-due-wrap" hidden><span>Nova data</span><input id="b-due" type="date"></label>
+      <label class="mini"><span>Prioridade</span>
+        <select id="b-prio"><option value="">Não alterar</option><option value="1">Urgente</option><option value="2">Alta</option><option value="3">Média</option><option value="4">Baixa</option><option value="0">Sem prioridade</option></select>
+      </label>
+      <label class="mini"><span>Situação</span>
+        <select id="b-done"><option value="">Não alterar</option><option value="1">Concluídas</option><option value="0">Abertas</option></select>
+      </label>
+      <label class="mini"><span>Projeto</span><input id="b-project" list="dl-project" placeholder="Não alterar" maxlength="120"></label>
+      <label class="mini" id="b-client-wrap"><span>Cliente</span><input id="b-client" list="dl-client" placeholder="Não alterar" maxlength="120"></label>
+      <label class="mini"><span>Mover para ambiente</span><select id="b-ws"></select></label>
+    </div>
+    <div class="field">
+      <label>Responsáveis</label>
+      <select id="b-as-mode"><option value="">Não alterar</option><option value="add">Adicionar os escolhidos</option><option value="replace">Trocar pelos escolhidos</option><option value="remove">Remover os escolhidos</option></select>
+      <div class="people" id="b-assignees" hidden></div>
+    </div>
+    <div class="actions">
+      <span></span>
+      <div class="right">
+        <button type="button" class="btn secondary" id="b-cancel">Cancelar</button>
+        <button type="submit" class="btn" id="b-save">Aplicar</button>
       </div>
     </div>
   </form>

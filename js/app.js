@@ -12,7 +12,8 @@ const S = {
   loaded: false,
   ws: store("t.ws"), status: "open", q: "", project: "", client: "", assignee: "", due: "", prio: "",
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
-  editing: null, pick: [], editingWs: null
+  editing: null, pick: [], editingWs: null,
+  selecting: false, sel: new Set(), visibleIds: [], bulkPick: []
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -201,6 +202,10 @@ function renderFilters() {
   $("st-open").setAttribute("aria-pressed", String(S.status === "open"));
   $("st-done").setAttribute("aria-pressed", String(S.status === "done"));
   $("wsedit").hidden = !ws;
+  const active = [S.project, S.client, S.assignee, S.status === "open" ? S.due : "", S.prio].filter(Boolean).length;
+  $("filters-count").hidden = !active; $("filters-count").textContent = String(active);
+  $("fclear").hidden = !active;
+  $("qa-title").placeholder = ws ? `Adicionar tarefa em ${ws.name} e apertar Enter` : "Adicionar tarefa";
 }
 
 const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -210,11 +215,14 @@ function taskCard(t, ws) {
   const late = !t.done && t.due_date && t.due_date < t0;
   const dateCls = "tag" + (late ? " late" : !t.done && t.due_date === t0 ? " today" : "");
   const as = assigneesOf(t.id);
-  const check = h("button", { type: "button", class: "check", "aria-label": t.done ? "Reabrir tarefa" : "Concluir tarefa", onclick: () => toggleDone(t) });
+  const sel = S.selecting && S.sel.has(t.id);
+  const check = h("button", { type: "button", class: "check",
+    "aria-label": S.selecting ? (sel ? "Desmarcar" : "Selecionar") : t.done ? "Reabrir tarefa" : "Concluir tarefa",
+    onclick: () => (S.selecting ? toggleSel(t.id) : toggleDone(t)) });
   check.innerHTML = CHECK_SVG;
-  return h("div", { class: "task" + (t.done ? " done" : "") + (late ? " is-late" : "") }, [
+  return h("div", { class: "task" + (t.done ? " done" : "") + (late ? " is-late" : "") + (S.selecting ? " selecting" : "") + (sel ? " selected" : "") }, [
     check,
-    h("button", { type: "button", class: "body", onclick: () => openTask(t) }, [
+    h("button", { type: "button", class: "body", onclick: () => (S.selecting ? toggleSel(t.id) : openTask(t)) }, [
       h("span", { class: "title", text: t.title }),
       t.description ? h("span", { class: "desc", text: t.description }) : null,
       h("div", { class: "meta" }, [
@@ -254,7 +262,7 @@ function render() {
   }
   if (!currentWs()) S.ws = S.workspaces[0].id;
   const ws = currentWs();
-  renderChips(); renderFilters(); $("fab").hidden = false;
+  renderChips(); renderFilters(); $("fab").hidden = S.selecting;
 
   const q = S.q.trim().toLowerCase(); const t0 = today(); const wk = addDays(7);
   const all = tasksIn(ws.id);
@@ -325,6 +333,8 @@ function render() {
     groups.push(...dated, section("Sem data", list.filter((t) => !t.due_date), ws));
   } else groups.push(section("Concluídas", list, ws));
   groups.forEach((g) => g && main.append(g));
+  S.visibleIds = list.map((t) => t.id);
+  renderBulkbar();
 
   if (!list.length) {
     const filtered = q || S.project || S.client || S.assignee || S.prio || (S.status === "open" && S.due);
@@ -369,6 +379,9 @@ function openTask(t) {
   $("f-notes").value = t ? t.notes : "";
   $("f-done").checked = !!(t && t.done);
   $("donewrap").hidden = !t;
+  const adv = !!(t && (t.description || t.notes));
+  $("f-advanced").hidden = !adv; $("f-more").setAttribute("aria-expanded", String(adv));
+  $("f-more").textContent = adv ? "Menos opções" : "Mais opções";
   S.pick = t ? [...assigneesOf(t.id)] : (S.assignee && !["me", "none"].includes(S.assignee) ? [S.assignee] : [S.uid]);
   fillWsSelect(t ? t.workspace_id : S.ws);
   syncTaskForm();
@@ -440,6 +453,157 @@ async function toggleDone(t) {
   if (error) { t.done = !t.done; render(); return fail(error); }
   if (t.done) toast(`Concluída: ${t.title}`);
 }
+
+$("f-more").addEventListener("click", () => {
+  const open = $("f-advanced").hidden;
+  $("f-advanced").hidden = !open; $("f-more").setAttribute("aria-expanded", String(open));
+  $("f-more").textContent = open ? "Menos opções" : "Mais opções";
+});
+
+/* ================= Adição rápida ================= */
+$("quickadd").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const title = $("qa-title").value.trim(); const ws = currentWs();
+  if (!title || !ws) return;
+  const row = {
+    workspace_id: ws.id, title,
+    due_date: $("qa-due").value || (S.due === "today" ? today() : null),
+    project: S.project || "", client: isWork(ws) ? S.client || "" : "",
+    priority: S.prio && S.prio !== "0" ? Number(S.prio) : null
+  };
+  $("qa-title").disabled = true;
+  try {
+    const { data, error } = await sb.from("tasks").insert(row).select("id").single();
+    if (error) throw error;
+    const who = S.assignee && !["me", "none"].includes(S.assignee) ? S.assignee : S.assignee === "none" ? null : S.uid;
+    if (who) await sb.from("task_assignees").insert({ task_id: data.id, user_id: who });
+    $("qa-title").value = ""; $("qa-due").value = "";
+    if (S.status !== "open") S.status = "open";
+    await loadAll();
+  } catch (e) { fail(e); } finally { $("qa-title").disabled = false; $("qa-title").focus(); }
+});
+
+/* ================= Seleção e edição em massa ================= */
+function toggleSel(id) { S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); render(); }
+function setSelecting(on) {
+  S.selecting = on; if (!on) S.sel.clear();
+  $("btn-select").setAttribute("aria-pressed", String(on));
+  $("btn-select").textContent = on ? "Sair da seleção" : "Selecionar";
+  render();
+}
+function renderBulkbar() {
+  // remove da seleção o que não existe mais
+  for (const id of [...S.sel]) if (!S.tasks.some((t) => t.id === id)) S.sel.delete(id);
+  $("bulkbar").hidden = !S.selecting;
+  const n = S.sel.size;
+  $("bulk-count").textContent = `${n} ${n === 1 ? "selecionada" : "selecionadas"}`;
+  const allVisible = S.visibleIds.length && S.visibleIds.every((id) => S.sel.has(id));
+  $("bulk-all").textContent = allVisible ? "Desmarcar visíveis" : `Selecionar todas visíveis (${S.visibleIds.length})`;
+  for (const id of ["bulk-done", "bulk-edit", "bulk-del"]) $(id).disabled = !n;
+  $("bulk-del").classList.remove("armed"); $("bulk-del").textContent = "Excluir";
+}
+const chunks = (arr, n = 100) => { const out = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; };
+async function bulkUpdate(patch) {
+  for (const ids of chunks([...S.sel])) {
+    const { error } = await sb.from("tasks").update(patch).in("id", ids);
+    if (error) throw error;
+  }
+}
+$("btn-select").addEventListener("click", () => setSelecting(!S.selecting));
+$("bulk-cancel").addEventListener("click", () => setSelecting(false));
+$("bulk-all").addEventListener("click", () => {
+  const allVisible = S.visibleIds.every((id) => S.sel.has(id));
+  for (const id of S.visibleIds) allVisible ? S.sel.delete(id) : S.sel.add(id);
+  render();
+});
+$("bulk-done").addEventListener("click", async () => {
+  const n = S.sel.size;
+  try { await bulkUpdate({ done: true }); toast(`${n} tarefas concluídas.`); setSelecting(false); await loadAll(); } catch (e) { fail(e); }
+});
+$("bulk-del").addEventListener("click", async () => {
+  const b = $("bulk-del"); const n = S.sel.size;
+  if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = `Excluir ${n}?`; return; }
+  try {
+    for (const ids of chunks([...S.sel])) { const { error } = await sb.from("tasks").delete().in("id", ids); if (error) throw error; }
+    toast(`${n} tarefas excluídas.`); setSelecting(false); await loadAll();
+  } catch (e) { fail(e); }
+});
+function renderBulkPicker() {
+  const mode = $("b-as-mode").value; const box = $("b-assignees");
+  box.hidden = !mode;
+  const wsIds = new Set([...S.sel].map((id) => (S.tasks.find((t) => t.id === id) || {}).workspace_id));
+  const target = $("b-ws").value;
+  if (target) { wsIds.clear(); wsIds.add(target); }
+  const people = [...new Set(S.members.filter((m) => wsIds.has(m.workspace_id)).map((m) => m.user_id))];
+  S.bulkPick = S.bulkPick.filter((id) => people.includes(id));
+  box.replaceChildren(...people.map((id) => {
+    const on = S.bulkPick.includes(id);
+    return h("button", { type: "button", class: "person", "aria-pressed": String(on), onclick: () => {
+      S.bulkPick = on ? S.bulkPick.filter((x) => x !== id) : [...S.bulkPick, id]; renderBulkPicker();
+    } }, [avatar(id), h("span", { text: nameOf(id, true) })]);
+  }));
+}
+$("bulk-edit").addEventListener("click", () => {
+  const n = S.sel.size;
+  $("bf-title").textContent = `Editar ${n} ${n === 1 ? "tarefa" : "tarefas"}`;
+  for (const id of ["b-due-mode", "b-prio", "b-done", "b-project", "b-client", "b-as-mode"]) $(id).value = "";
+  $("b-due").value = ""; $("b-due-wrap").hidden = true;
+  $("b-ws").replaceChildren(h("option", { value: "", text: "Não mover" }), ...S.workspaces.map((w) => h("option", { value: w.id, text: w.name })));
+  $("b-client-wrap").hidden = !S.workspaces.some((w) => isWork(w));
+  S.bulkPick = []; renderBulkPicker();
+  $("dl-project").replaceChildren(...uniq(S.tasks.map((t) => t.project)).map((v) => h("option", { value: v })));
+  $("dl-client").replaceChildren(...uniq(S.tasks.map((t) => t.client)).map((v) => h("option", { value: v })));
+  $("ov-bulk").hidden = false;
+});
+$("b-due-mode").addEventListener("change", (e) => { $("b-due-wrap").hidden = e.target.value !== "set"; if (e.target.value === "set") $("b-due").focus(); });
+$("b-as-mode").addEventListener("change", renderBulkPicker);
+$("b-ws").addEventListener("change", renderBulkPicker);
+$("b-cancel").addEventListener("click", () => ($("ov-bulk").hidden = true));
+$("bulkform").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const patch = {};
+  const dm = $("b-due-mode").value;
+  if (dm === "set") { if (!$("b-due").value) { toast("Escolha a nova data."); return; } patch.due_date = $("b-due").value; }
+  if (dm === "clear") patch.due_date = null;
+  if ($("b-prio").value) patch.priority = $("b-prio").value === "0" ? null : Number($("b-prio").value);
+  if ($("b-done").value) patch.done = $("b-done").value === "1";
+  if ($("b-project").value.trim()) patch.project = $("b-project").value.trim();
+  if ($("b-client").value.trim()) patch.client = $("b-client").value.trim();
+  if ($("b-ws").value) patch.workspace_id = $("b-ws").value;
+  const asMode = $("b-as-mode").value;
+  if (!Object.keys(patch).length && !asMode) { toast("Nenhuma alteração escolhida."); return; }
+  if (asMode && asMode !== "replace" && !S.bulkPick.length) { toast("Escolha pelo menos uma pessoa."); return; }
+  const btn = $("b-save"); btn.disabled = true;
+  const ids = [...S.sel];
+  try {
+    if (Object.keys(patch).length) await bulkUpdate(patch);
+    if (patch.workspace_id) {
+      // responsáveis que não participam do novo ambiente saem da tarefa
+      const allowed = membersOf(patch.workspace_id).map((m) => m.user_id);
+      for (const part of chunks(ids)) {
+        const { error } = await sb.from("task_assignees").delete().in("task_id", part).not("user_id", "in", `(${allowed.join(",") || "00000000-0000-0000-0000-000000000000"})`);
+        if (error) throw error;
+      }
+    }
+    if (asMode === "replace" || asMode === "remove") {
+      for (const part of chunks(ids)) {
+        let q = sb.from("task_assignees").delete().in("task_id", part);
+        if (asMode === "remove") q = q.in("user_id", S.bulkPick);
+        const { error } = await q; if (error) throw error;
+      }
+    }
+    if ((asMode === "replace" || asMode === "add") && S.bulkPick.length) {
+      const rows = ids.flatMap((task_id) => S.bulkPick.map((user_id) => ({ task_id, user_id })));
+      for (const part of chunks(rows, 200)) {
+        const { error } = await sb.from("task_assignees").upsert(part, { onConflict: "task_id,user_id", ignoreDuplicates: true });
+        if (error) throw error;
+      }
+    }
+    $("ov-bulk").hidden = true;
+    toast(`${ids.length} tarefas atualizadas.`);
+    setSelecting(false); await loadAll();
+  } catch (e) { fail(e); } finally { btn.disabled = false; }
+});
 
 /* ================= Ambientes ================= */
 let pendingInvites = [];
@@ -574,12 +738,19 @@ $("fprio").addEventListener("change", (e) => { S.prio = e.target.value; render()
 $("fview").addEventListener("change", (e) => { S.view = e.target.value; store("t.view", S.view); render(); });
 $("fsort").addEventListener("click", () => { S.sort = S.sort === "asc" ? "desc" : "asc"; store("t.sort", S.sort); render(); });
 $("fab").addEventListener("click", () => openTask(null));
-for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)]]) {
+$("btn-filters").addEventListener("click", () => {
+  const open = !$("filters").classList.contains("open");
+  $("filters").classList.toggle("open", open); $("btn-filters").setAttribute("aria-expanded", String(open));
+});
+$("fclear").addEventListener("click", () => { S.project = S.client = S.assignee = S.due = S.prio = ""; render(); });
+for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)]]) {
   $(ov).addEventListener("click", (e) => { if (e.target === $(ov)) close(); });
 }
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (!$("ov-task").hidden) closeTask(); else if (!$("ov-ws").hidden) closeWs(); else $("ov-me").hidden = true;
+  if (!$("ov-task").hidden) closeTask(); else if (!$("ov-bulk").hidden) $("ov-bulk").hidden = true;
+  else if (!$("ov-ws").hidden) closeWs(); else if (!$("ov-me").hidden) $("ov-me").hidden = true;
+  else if (S.selecting) setSelecting(false);
 });
 
 /* ================= Login ================= */
