@@ -8,7 +8,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const API_KEY = ["ANTHROPIC_API_KEY", "ANTROPIC_API_KEY", "anthropic_api_key", "antropic_api_key", "CLAUDE_API_KEY"].map((k) => Deno.env.get(k)).find(Boolean) ?? "";
 const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-5-5";
 const TZ = "America/Sao_Paulo";
 
@@ -178,7 +178,7 @@ function resolveActions(c: Ctx, input: any): { actions: Action[]; problems: stri
 }
 
 async function chat(c: Ctx, messages: { role: string; content: string }[]) {
-  if (!API_KEY) throw new Error("Segredo ANTHROPIC_API_KEY não configurado no Supabase.");
+  if (!API_KEY) throw new Error("Chave da API da Anthropic não encontrada nos segredos do Supabase (esperado ANTHROPIC_API_KEY).");
   const today = todayLocal();
   const wd = WD[new Date(today + "T12:00:00Z").getUTCDay()];
   const system = `Você é o assistente do app de tarefas do usuário. Ambiente atual: "${c.ws.name}" (${c.ws.kind === "trabalho" ? "trabalho, com clientes" : "pessoal"}).

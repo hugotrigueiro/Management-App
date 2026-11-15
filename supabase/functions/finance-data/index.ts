@@ -9,7 +9,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SA_JSON = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") ?? "";
-const API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const API_KEY = ["ANTHROPIC_API_KEY", "ANTROPIC_API_KEY", "anthropic_api_key", "antropic_api_key", "CLAUDE_API_KEY"].map((k) => Deno.env.get(k)).find(Boolean) ?? "";
 const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-5-5";
 const TZ = "America/Sao_Paulo";
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
@@ -224,7 +224,7 @@ const TOOL = {
 };
 
 async function chat(spreadsheetId: string, messages: { role: string; content: string }[], userName: string) {
-  if (!API_KEY) throw new Error("Segredo ANTHROPIC_API_KEY não configurado no Supabase.");
+  if (!API_KEY) throw new Error("Chave da API da Anthropic não encontrada nos segredos do Supabase (esperado ANTHROPIC_API_KEY).");
   const s = await readAll(spreadsheetId);
   const ctx = financeContext(s);
   const opts = options(ctx.rows);
