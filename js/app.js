@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { buildState as buildFinance, renderFinance } from "./finance.js?v=13";
+import { buildState as buildFinance, renderFinance } from "./finance.js?v=14";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -1045,7 +1045,7 @@ $("lancform").addEventListener("submit", async (e) => {
     const res = await invokeAi({ mode: "add", workspace_id: S.finSources[0].workspace_id, entries: [entry] }, "finance-data");
     if (!res.added) throw new Error((res.problems && res.problems[0]) || "Nada foi salvo.");
     $("ov-lanc").hidden = true;
-    toast(`${L.tipo === "Rendas" ? "Renda" : "Gasto"} de R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} salvo na planilha.`);
+    toast(`${L.tipo === "Rendas" ? "Renda" : "Gasto"} de R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} salvo na planilha${res.row ? ` (aba Dados, linha ${res.row}, ID ${res.ids[0]})` : ""}.`);
     loadFinance();
   } catch (err) { toast("Não salvou: " + err.message); }
   finally { btn.disabled = false; btn.textContent = "Salvar na planilha"; }
@@ -1149,7 +1149,7 @@ async function applyAi(pr, btn) {
     try {
       const res = await invokeAi({ mode: "add", workspace_id: S.finSources[0].workspace_id, entries: pr.actions.map((a) => a.entry) }, "finance-data");
       pr.status = res.problems && res.problems.length ? "partial" : "applied"; pr.errors = res.problems || [];
-      toast(`${res.added} ${res.added === 1 ? "lançamento salvo" : "lançamentos salvos"} na planilha.`);
+      toast(`${res.added} ${res.added === 1 ? "lançamento salvo" : "lançamentos salvos"} na planilha${res.row ? ` (a partir da linha ${res.row} da aba Dados)` : ""}.`);
       loadFinance();
     } catch (e) { toast("Não salvou: " + e.message); btn.disabled = false; btn.textContent = "Salvar na planilha"; return; }
     renderAi(); return;

@@ -186,14 +186,15 @@ async function addEntries(spreadsheetId: string, raw: any[]) {
     const { entry, problem } = normalizeEntry(e, opts);
     if (!entry) { problems.push(problem!); continue; }
     const br = `${entry.data.slice(8, 10)}/${entry.data.slice(5, 7)}/${entry.data.slice(0, 4)}`;
-    values.push([nextId++, br, entry.titular, entry.tipo_conta || contaTipo[entry.conta] || "", entry.conta, entry.tipo, "", entry.categoria, "",
+    values.push([nextId++, br, entry.titular, entry.tipo_conta || contaTipo[entry.conta] || "", entry.conta, entry.tipo, entry.categoria, entry.categoria, "",
       entry.estabelecimento ?? "", entry.recorrencia ?? "Avulso", entry.descricao ?? "", "", entry.valor]);
   }
   if (!values.length) return { ok: false, added: 0, problems, error: problems[0] || "Nada para adicionar." };
-  await sheetsFetch(`${spreadsheetId}/values/${encodeURIComponent("Dados!A:N")}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+  const res = await sheetsFetch(`${spreadsheetId}/values/${encodeURIComponent("Dados!A:N")}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
     method: "POST", body: JSON.stringify({ values }),
   });
-  return { ok: true, added: values.length, ids: values.map((v) => v[0]), problems };
+  const m = String(res.updates?.updatedRange ?? "").match(/!A(\d+)/);
+  return { ok: true, added: values.length, ids: values.map((v) => v[0]), row: m ? Number(m[1]) : null, problems };
 }
 
 /* ---------- chat ---------- */
