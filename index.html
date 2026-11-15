@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1d2a44">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Tarefas">
+<meta name="apple-mobile-web-app-title" content="Pessoal">
 <title>Tarefas</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=10">
+<link rel="stylesheet" href="css/app.css?v=11">
 </head>
 <body>
 <!-- Tela de login -->
@@ -35,29 +35,45 @@
 <div class="app" id="app" hidden>
   <header>
     <div class="top">
-      <h1>Tarefas</h1>
+      <div class="brand">
+        <h1 id="mod-title">Tarefas</h1>
+        <nav class="modnav" id="modnav" aria-label="Seções do app">
+          <button type="button" data-mod="tasks" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>Tarefas</span>
+          </button>
+          <button type="button" data-mod="fin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/></svg>
+            <span>Finanças</span>
+          </button>
+        </nav>
+      </div>
       <div class="top-actions">
-        <button type="button" class="iconbtn" id="wsedit" aria-label="Ambiente e membros">
+        <button type="button" class="iconbtn fin-only" id="fin-refresh" aria-label="Atualizar dados da planilha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          <span>Atualizar</span>
+        </button>
+        <button type="button" class="iconbtn task-only" id="wsedit" aria-label="Ambiente e membros">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Membros</span>
         </button>
-        <button type="button" class="iconbtn" id="btn-ai" aria-label="Assistente" hidden>
+        <button type="button" class="iconbtn task-only" id="btn-ai" aria-label="Assistente" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
           <span>Assistente</span>
         </button>
-        <button type="button" class="iconbtn" id="btn-sync" aria-label="Sincronizar com a planilha" hidden>
+        <button type="button" class="iconbtn task-only" id="btn-sync" aria-label="Sincronizar com a planilha" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg>
           <span>Planilha</span>
         </button>
-        <button type="button" class="iconbtn" id="btn-notif" aria-label="Notificações do ambiente">
+        <button type="button" class="iconbtn task-only" id="btn-notif" aria-label="Notificações do ambiente">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span>Notificações</span>
         </button>
         <button type="button" class="me" id="btn-me" aria-label="Seu perfil"><img id="me-avatar" alt="" width="30" height="30"><span id="me-name"></span></button>
       </div>
     </div>
-    <div class="chips" id="wschips" role="toolbar" aria-label="Ambientes"></div>
-    <div class="tools">
+    <div class="chips task-only" id="wschips" role="toolbar" aria-label="Ambientes"></div>
+    <div class="tools task-only">
       <div class="seg" role="group" aria-label="Situação">
         <button type="button" id="st-open" aria-pressed="true">Abertas</button>
         <button type="button" id="st-done" aria-pressed="false">Concluídas</button>
@@ -66,7 +82,7 @@
       <button type="button" class="toolbtn" id="btn-filters" aria-expanded="false" aria-controls="filters">Filtros<span class="badge" id="filters-count" hidden></span></button>
       <button type="button" class="toolbtn" id="btn-select" aria-pressed="false">Selecionar</button>
     </div>
-    <div class="filters" id="filters">
+    <div class="filters task-only" id="filters">
       <select id="fproject" aria-label="Filtrar por projeto"></select>
       <select id="fclient" aria-label="Filtrar por cliente"></select>
       <select id="fassignee" aria-label="Filtrar por responsável"></select>
@@ -97,12 +113,16 @@
       <button type="button" class="linkbtn" id="fclear">Limpar filtros</button>
     </div>
   </header>
-  <form class="quickadd" id="quickadd" autocomplete="off">
+  <form class="quickadd task-only" id="quickadd" autocomplete="off">
     <input id="qa-title" maxlength="300" placeholder="Adicionar tarefa e apertar Enter" aria-label="Nova tarefa rápida">
     <input id="qa-due" type="date" aria-label="Data de conclusão">
     <button type="submit" class="btn">Adicionar</button>
   </form>
-  <main id="main"></main>
+  <main id="main" class="task-only"></main>
+  <section class="finance fin-only" id="finance" aria-labelledby="mod-title">
+    <p class="fin-status" id="fin-status"></p>
+    <div id="fin-root"></div>
+  </section>
 </div>
 
 <!-- Barra de ações em massa -->
@@ -316,6 +336,6 @@
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="js/app.js?v=10"></script>
+<script type="module" src="js/app.js?v=11"></script>
 </body>
 </html>

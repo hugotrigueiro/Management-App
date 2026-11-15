@@ -1,5 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
+import { buildState as buildFinance, renderFinance } from "./finance.js?v=11";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -14,7 +15,8 @@ const S = {
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
   editing: null, pick: [], editingWs: null,
   selecting: false, sel: new Set(), visibleIds: [], bulkPick: [],
-  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: [], sources: [], ai: new Map(), aiBusy: false
+  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: [], sources: [], ai: new Map(), aiBusy: false,
+  mod: store("t.mod") || "tasks", finSources: [], fin: { state: null, ui: {}, loading: false, at: null, error: null }
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -133,7 +135,7 @@ async function loadAll() {
   if (loading) { scheduleReload(); return loading; }
   loading = (async () => {
     try {
-      const [profiles, workspaces, members, tasks, assignees, items, rules, sources] = await Promise.all([
+      const [profiles, workspaces, members, tasks, assignees, items, rules, sources, finSources] = await Promise.all([
         fetchAll("profiles", "id,email,display_name,avatar_url,telegram_chat_id"),
         fetchAll("workspaces", "*", "sort_order"),
         fetchAll("workspace_members", "workspace_id,user_id,role"),
@@ -141,9 +143,10 @@ async function loadAll() {
         fetchAll("task_assignees", "task_id,user_id"),
         fetchAll("task_checklist_items", "id,task_id,text,done,position", "position"),
         fetchAll("notification_rules", "*", "created_at"),
-        fetchAll("sheet_sources", "*")
+        fetchAll("sheet_sources", "*"),
+        fetchAll("finance_sources", "workspace_id,title")
       ]);
-      S.rules = rules; S.sources = sources;
+      S.rules = rules; S.sources = sources; S.finSources = finSources;
       const cl = new Map();
       for (const it of items) { if (!cl.has(it.task_id)) cl.set(it.task_id, []); cl.get(it.task_id).push(it); }
       S.checklist = cl;
@@ -157,6 +160,7 @@ async function loadAll() {
       S.assignees = map;
       S.loaded = true;
       render();
+      applyMod();
       if (!$("ov-ws").hidden && S.editingWs) renderMembers();
       if (!$("ov-notif").hidden) renderNotif();
     } catch (e) {
@@ -173,7 +177,7 @@ let channel = null;
 function subscribe() {
   if (channel) return;
   channel = sb.channel("tudo");
-  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles", "notification_rules", "sheet_sources"]) {
+  for (const table of ["tasks", "task_assignees", "task_checklist_items", "workspaces", "workspace_members", "profiles", "notification_rules", "sheet_sources", "finance_sources"]) {
     channel.on("postgres_changes", { event: "*", schema: "public", table }, scheduleReload);
   }
   channel.subscribe();
@@ -928,6 +932,53 @@ $("btn-sync").addEventListener("click", async () => {
   } catch (e) { toast("Não sincronizou: " + e.message); await loadAll(); }
   finally { b.classList.remove("spinning"); b.disabled = false; }
 });
+
+/* ================= Seções: Tarefas / Finanças ================= */
+const MOD_TITLES = { tasks: "Tarefas", fin: "Finanças" };
+function applyMod() {
+  const hasFin = S.finSources.length > 0;
+  if (!hasFin) S.mod = "tasks";
+  document.body.classList.toggle("no-fin", !hasFin);
+  document.body.classList.toggle("mod-fin", S.mod === "fin");
+  for (const b of $("modnav").querySelectorAll("button")) {
+    if (b.dataset.mod === S.mod) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
+  $("mod-title").textContent = MOD_TITLES[S.mod];
+  document.title = MOD_TITLES[S.mod];
+  if (S.mod === "fin" && !S.fin.state && !S.fin.loading && !S.fin.error) loadFinance();
+}
+$("modnav").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-mod]");
+  if (!b || b.dataset.mod === S.mod) return;
+  S.mod = b.dataset.mod; store("t.mod", S.mod);
+  if (S.mod === "fin") S.fin.error = null;
+  applyMod(); window.scrollTo(0, 0);
+});
+function finStatus(text, err) { const el = $("fin-status"); el.textContent = text; el.classList.toggle("err", !!err); }
+async function loadFinance() {
+  const src = S.finSources[0];
+  if (!src || S.fin.loading) return;
+  S.fin.loading = true; S.fin.error = null;
+  const btn = $("fin-refresh"); btn.classList.add("spinning"); btn.disabled = true;
+  finStatus(S.fin.state ? "Atualizando…" : "Carregando a planilha de finanças…");
+  try {
+    const { data, error } = await sb.functions.invoke("finance-data", { body: { workspace_id: src.workspace_id } });
+    if (error) {
+      let msg = error.message;
+      try { const j = await error.context.json(); msg = j.error || msg; } catch { /* sem corpo */ }
+      throw new Error(msg);
+    }
+    if (!data || data.ok === false) throw new Error((data && data.error) || "Resposta vazia.");
+    S.fin.state = buildFinance(data); S.fin.at = new Date(data.fetched_at || Date.now());
+    const hh = `${String(S.fin.at.getHours()).padStart(2, "0")}:${String(S.fin.at.getMinutes()).padStart(2, "0")}`;
+    finStatus(`${src.title} · atualizado às ${hh}`);
+    await renderFinance($("fin-root"), S.fin.state, S.fin.ui);
+  } catch (e) {
+    S.fin.error = e.message;
+    finStatus("Não consegui carregar as finanças: " + e.message, true);
+  } finally { S.fin.loading = false; btn.classList.remove("spinning"); btn.disabled = false; }
+}
+$("fin-refresh").addEventListener("click", () => loadFinance());
 
 /* ================= Assistente ================= */
 const AI_SUGGEST = [
