@@ -14,7 +14,7 @@ const S = {
   view: store("t.view") || "date", sort: store("t.sort") || "asc",
   editing: null, pick: [], editingWs: null,
   selecting: false, sel: new Set(), visibleIds: [], bulkPick: [],
-  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: [], sources: []
+  checklist: new Map(), draft: [], repDays: [], toggled: new Set(), armed: null, rules: [], sources: [], ai: new Map(), aiBusy: false
 };
 const PRIO = { 1: "Urgente", 2: "Alta", 3: "Média", 4: "Baixa" };
 
@@ -276,6 +276,7 @@ function renderFilters() {
   $("st-open").setAttribute("aria-pressed", String(S.status === "open"));
   $("st-done").setAttribute("aria-pressed", String(S.status === "done"));
   $("wsedit").hidden = !ws;
+  $("btn-ai").hidden = !ws;
   $("btn-sync").hidden = !(ws && S.sources.some((x) => x.workspace_id === ws.id && x.enabled));
   const active = [S.project, S.client, S.assignee, S.status === "open" ? S.due : "", S.prio].filter(Boolean).length;
   $("filters-count").hidden = !active; $("filters-count").textContent = String(active);
@@ -928,6 +929,104 @@ $("btn-sync").addEventListener("click", async () => {
   finally { b.classList.remove("spinning"); b.disabled = false; }
 });
 
+/* ================= Assistente ================= */
+const AI_SUGGEST = [
+  "Quais são as prioridades para hoje e amanhã?",
+  "Resuma o que está atrasado, agrupado por cliente.",
+  "Monte uma sugestão de agenda para a semana.",
+  "O que eu concluí nos últimos 7 dias?"
+];
+const aiConv = () => { const ws = currentWs(); if (!S.ai.has(ws.id)) S.ai.set(ws.id, []); return S.ai.get(ws.id); };
+function esc(t) { return t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function mdLite(text) {
+  const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const out = []; let list = null;
+  for (const raw of text.split("\n")) {
+    const line = raw.trimEnd();
+    const ul = line.match(/^\s*[-*•]\s+(.*)/), ol = line.match(/^\s*\d+[.)]\s+(.*)/), hd = line.match(/^#{1,4}\s+(.*)/);
+    const kind = ul ? "ul" : ol ? "ol" : null;
+    if (list && list.kind !== kind) { out.push(`<${list.kind}>${list.items.join("")}</${list.kind}>`); list = null; }
+    if (kind) { list = list || { kind, items: [] }; list.items.push(`<li>${inline((ul || ol)[1])}</li>`); continue; }
+    if (hd) out.push(`<h4>${inline(hd[1])}</h4>`);
+    else if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+  }
+  if (list) out.push(`<${list.kind}>${list.items.join("")}</${list.kind}>`);
+  return out.join("");
+}
+function renderAi() {
+  const log = $("ai-log"); log.replaceChildren();
+  const conv = aiConv();
+  if (!conv.length) {
+    log.append(h("div", { class: "ai-empty" }, [
+      h("p", { text: `Pergunte sobre as tarefas de ${currentWs().name} ou peça mudanças. Nada muda sem você confirmar.` }),
+      ...AI_SUGGEST.map((q) => h("button", { type: "button", class: "pill", text: q, onclick: () => sendAi(q) }))
+    ]));
+  }
+  conv.forEach((m, i) => {
+    if (m.role === "user") { log.append(h("div", { class: "ai-msg user", text: m.content })); return; }
+    const bubble = h("div", { class: "ai-msg bot" + (m.error ? " err" : "") });
+    if (m.error) bubble.textContent = m.content; else bubble.innerHTML = mdLite(m.content);
+    for (const p of m.problems || []) bubble.append(h("div", { class: "ai-note", text: p }));
+    log.append(bubble);
+    if (m.proposal) {
+      const pr = m.proposal, closed = !!pr.status;
+      log.append(h("div", { class: "ai-proposal" + (closed ? " closed" : "") }, [
+        h("h5", { text: closed ? (pr.status === "applied" ? "Aplicado" : pr.status === "partial" ? "Aplicado em parte" : "Descartado") : `Mudanças propostas (${pr.actions.length})` }),
+        h("ul", {}, pr.actions.map((a) => h("li", { text: a.label }))),
+        ...(pr.errors || []).map((e) => h("div", { class: "ai-note", text: e })),
+        closed ? null : h("div", { class: "row" }, [
+          h("button", { type: "button", class: "btn secondary", text: "Descartar", onclick: () => { pr.status = "discarded"; conv.push({ role: "user", content: "(descartei as mudanças propostas)" }); renderAi(); } }),
+          h("button", { type: "button", class: "btn", text: "Confirmar", onclick: (e) => applyAi(pr, e.currentTarget) })
+        ])
+      ]));
+    }
+  });
+  if (S.aiBusy) log.append(h("div", { class: "ai-typing", text: "Pensando…" }));
+  log.scrollTop = log.scrollHeight;
+  $("ai-send").disabled = S.aiBusy;
+}
+async function invokeAi(body) {
+  const { data, error } = await sb.functions.invoke("assistant", { body });
+  if (error) {
+    let msg = error.message;
+    try { const j = await error.context.json(); msg = j.error || msg; } catch { /* sem corpo */ }
+    throw new Error(msg);
+  }
+  if (data && data.ok === false && data.error) throw new Error(data.error);
+  return data;
+}
+async function sendAi(text) {
+  text = (text || "").trim();
+  if (!text || S.aiBusy) return;
+  const ws = currentWs(), conv = aiConv();
+  conv.push({ role: "user", content: text });
+  S.aiBusy = true; renderAi();
+  try {
+    const messages = conv.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.proposal ? `${m.content}\n[Propus: ${m.proposal.actions.map((a) => a.label).join("; ")}${m.proposal.status ? ` | ${m.proposal.status === "discarded" ? "descartado" : "aplicado"}` : ""}]` : m.content }));
+    const data = await invokeAi({ mode: "chat", workspace_id: ws.id, messages });
+    conv.push({ role: "assistant", content: data.reply || "", proposal: data.proposal || null, problems: data.problems || [] });
+  } catch (e) {
+    conv.push({ role: "assistant", error: true, content: "Não consegui responder: " + e.message });
+  } finally { S.aiBusy = false; renderAi(); }
+}
+async function applyAi(pr, btn) {
+  btn.disabled = true; btn.textContent = "Aplicando…";
+  try {
+    const res = await invokeAi({ mode: "apply", workspace_id: currentWs().id, actions: pr.actions });
+    pr.status = res.errors && res.errors.length ? (res.applied ? "partial" : "discarded") : "applied";
+    pr.errors = res.errors || [];
+    toast(res.applied ? `${res.applied} ${res.applied === 1 ? "mudança aplicada" : "mudanças aplicadas"}.` : "Nenhuma mudança aplicada.");
+    await loadAll();
+  } catch (e) { toast("Não aplicou: " + e.message); btn.disabled = false; btn.textContent = "Confirmar"; return; }
+  renderAi();
+}
+$("btn-ai").addEventListener("click", () => { $("ov-ai").hidden = false; renderAi(); setTimeout(() => $("ai-text").focus(), 50); });
+$("ai-close").addEventListener("click", () => ($("ov-ai").hidden = true));
+$("ai-clear").addEventListener("click", () => { S.ai.set(currentWs().id, []); renderAi(); });
+$("ai-form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("ai-text"); const v = t.value; t.value = ""; t.style.height = ""; sendAi(v); });
+$("ai-text").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("ai-form").requestSubmit(); } });
+$("ai-text").addEventListener("input", (e) => { const t = e.target; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; });
+
 /* ================= Notificações ================= */
 async function callNotify(body) {
   const { data, error } = await sb.functions.invoke("telegram-notify", { body });
@@ -1078,7 +1177,7 @@ $("btn-filters").addEventListener("click", () => {
   $("filters").classList.toggle("open", open); $("btn-filters").setAttribute("aria-expanded", String(open));
 });
 $("fclear").addEventListener("click", () => { S.project = S.client = S.assignee = S.due = S.prio = ""; render(); });
-for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)], ["ov-notif", () => ($("ov-notif").hidden = true)]]) {
+for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)], ["ov-notif", () => ($("ov-notif").hidden = true)], ["ov-ai", () => ($("ov-ai").hidden = true)]]) {
   $(ov).addEventListener("click", (e) => { if (e.target === $(ov)) close(); });
 }
 document.addEventListener("keydown", (e) => {

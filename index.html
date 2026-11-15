@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=9">
+<link rel="stylesheet" href="css/app.css?v=10">
 </head>
 <body>
 <!-- Tela de login -->
@@ -40,6 +40,10 @@
         <button type="button" class="iconbtn" id="wsedit" aria-label="Ambiente e membros">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Membros</span>
+        </button>
+        <button type="button" class="iconbtn" id="btn-ai" aria-label="Assistente" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+          <span>Assistente</span>
         </button>
         <button type="button" class="iconbtn" id="btn-sync" aria-label="Sincronizar com a planilha" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg>
@@ -267,6 +271,25 @@
   </div>
 </div>
 
+<!-- Folha: assistente -->
+<div class="overlay" id="ov-ai" hidden>
+  <div class="sheet ai-sheet" role="dialog" aria-labelledby="ai-title">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <h3 id="ai-title">Assistente</h3>
+      <div class="ai-head-actions">
+        <button type="button" class="pill" id="ai-clear">Nova conversa</button>
+        <button type="button" class="pill" id="ai-close" aria-label="Fechar">✕</button>
+      </div>
+    </div>
+    <div class="ai-log" id="ai-log" aria-live="polite"></div>
+    <form class="ai-input" id="ai-form" autocomplete="off">
+      <textarea id="ai-text" rows="1" placeholder="Pergunte ou peça uma mudança" aria-label="Mensagem para o assistente"></textarea>
+      <button type="submit" class="btn" id="ai-send">Enviar</button>
+    </form>
+  </div>
+</div>
+
 <!-- Folha: perfil -->
 <div class="overlay" id="ov-me" hidden>
   <form class="sheet" id="meform" autocomplete="off">
@@ -293,6 +316,6 @@
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="js/app.js?v=9"></script>
+<script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>
