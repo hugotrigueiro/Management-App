@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=11">
+<link rel="stylesheet" href="css/app.css?v=12">
 </head>
 <body>
 <!-- Tela de login -->
@@ -57,7 +57,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Membros</span>
         </button>
-        <button type="button" class="iconbtn task-only" id="btn-ai" aria-label="Assistente" hidden>
+        <button type="button" class="iconbtn" id="btn-ai" aria-label="Assistente" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
           <span>Assistente</span>
         </button>
@@ -137,6 +137,7 @@
   </div>
 </div>
 
+<button class="fab fin-only" id="fin-fab" type="button" aria-label="Novo lançamento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 <button class="fab" id="fab" type="button" aria-label="Nova tarefa" hidden>
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 </button>
@@ -291,6 +292,34 @@
   </div>
 </div>
 
+<!-- Folha: novo lançamento financeiro -->
+<div class="overlay" id="ov-lanc" hidden>
+  <form class="sheet compact" id="lancform" autocomplete="off">
+    <div class="grab"></div>
+    <h3>Novo lançamento</h3>
+    <div class="seg l-tipo" role="group" aria-label="Tipo de lançamento">
+      <button type="button" data-tipo="Gastos" aria-pressed="true">Gasto</button>
+      <button type="button" data-tipo="Rendas" aria-pressed="false">Renda</button>
+    </div>
+    <div class="bulk-grid">
+      <label class="mini"><span>Valor (R$)</span><input id="l-valor" inputmode="decimal" placeholder="0,00" required autocomplete="off"></label>
+      <label class="mini"><span>Data</span><input id="l-data" type="date" required></label>
+      <label class="mini"><span>Estabelecimento</span><input id="l-est" list="l-est-list" maxlength="120" placeholder="Ex.: iFood"></label>
+      <label class="mini"><span>Categoria</span><select id="l-cat" required></select></label>
+      <label class="mini"><span>Quem</span><select id="l-tit" required></select></label>
+      <label class="mini"><span>Conta</span><select id="l-conta" required></select></label>
+      <label class="mini"><span>Recorrência</span><select id="l-rec"></select></label>
+      <label class="mini"><span>Descrição</span><input id="l-desc" maxlength="300" placeholder="Opcional"></label>
+    </div>
+    <datalist id="l-est-list"></datalist>
+    <p class="hint" id="l-hint">Vai direto para a aba Dados da planilha.</p>
+    <div class="actions"><span></span><div class="right">
+      <button type="button" class="btn secondary" id="l-cancel">Cancelar</button>
+      <button type="submit" class="btn" id="l-save">Salvar na planilha</button>
+    </div></div>
+  </form>
+</div>
+
 <!-- Folha: assistente -->
 <div class="overlay" id="ov-ai" hidden>
   <div class="sheet ai-sheet" role="dialog" aria-labelledby="ai-title">
@@ -336,6 +365,6 @@
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="js/app.js?v=11"></script>
+<script type="module" src="js/app.js?v=12"></script>
 </body>
 </html>

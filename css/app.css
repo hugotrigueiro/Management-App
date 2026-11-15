@@ -355,3 +355,10 @@ body.no-fin .modnav { display: none; }
 .fin-table td.desc { white-space: normal; min-width: 180px; }
 .fin-table .empty-row, .fin-empty { color: var(--muted); text-align: center; }
 #fin-refresh.spinning svg { animation: spin 1s linear infinite; }
+
+/* Lançamento financeiro */
+.l-tipo { justify-self: start; }
+.l-tipo button[data-tipo="Gastos"][aria-pressed="true"] { background: var(--danger-soft); color: var(--danger); }
+.l-tipo button[data-tipo="Rendas"][aria-pressed="true"] { background: rgba(35, 132, 90, .14); color: var(--ok); }
+#l-valor { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fin-row-new td { background: var(--accent-soft); }

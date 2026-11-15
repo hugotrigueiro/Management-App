@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { buildState as buildFinance, renderFinance } from "./finance.js?v=11";
+import { buildState as buildFinance, renderFinance } from "./finance.js?v=12";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -969,7 +969,7 @@ async function loadFinance() {
       throw new Error(msg);
     }
     if (!data || data.ok === false) throw new Error((data && data.error) || "Resposta vazia.");
-    S.fin.state = buildFinance(data); S.fin.at = new Date(data.fetched_at || Date.now());
+    S.fin.state = buildFinance(data); S.fin.options = data.options || null; S.fin.at = new Date(data.fetched_at || Date.now());
     const hh = `${String(S.fin.at.getHours()).padStart(2, "0")}:${String(S.fin.at.getMinutes()).padStart(2, "0")}`;
     finStatus(`${src.title} · atualizado às ${hh}`);
     await renderFinance($("fin-root"), S.fin.state, S.fin.ui);
@@ -980,14 +980,92 @@ async function loadFinance() {
 }
 $("fin-refresh").addEventListener("click", () => loadFinance());
 
+/* ---------- Novo lançamento ---------- */
+const L = { tipo: "Gastos", catTouched: false };
+const parseMoney = (v) => {
+  let s = String(v || "").trim().replace(/[R$\s]/g, "");
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s); return isFinite(n) ? n : NaN;
+};
+function fillOpts(sel, list, current) {
+  sel.replaceChildren(...list.map((v) => h("option", { value: v, text: v })));
+  if (current && list.includes(current)) sel.value = current;
+}
+function lancCats() {
+  const o = S.fin.options;
+  return L.tipo === "Rendas" ? o.catRendas : o.catGastos;
+}
+function setLancTipo(t) {
+  L.tipo = t;
+  for (const b of document.querySelectorAll(".l-tipo button")) b.setAttribute("aria-pressed", String(b.dataset.tipo === t));
+  fillOpts($("l-cat"), lancCats(), $("l-cat").value);
+}
+function lastTx(pred) {
+  const tx = (S.fin.state && S.fin.state.transactions) || [];
+  for (let i = tx.length - 1; i >= 0; i--) if (pred(tx[i])) return tx[i];
+  return null;
+}
+function openLanc() {
+  const o = S.fin.options;
+  if (!o) { toast("Espere os dados da planilha carregarem."); return; }
+  L.catTouched = false;
+  const myFirst = ((S.me && (S.me.display_name || S.me.email)) || "").split(/[ @]/)[0].toLowerCase();
+  const me = o.titulares.find((t) => t.toLowerCase() === myFirst) || o.titulares[0];
+  fillOpts($("l-tit"), o.titulares, me);
+  const myLast = lastTx((t) => t.titular === me);
+  fillOpts($("l-conta"), o.contas, myLast && myLast.conta);
+  const recs = o.recorrencias.length ? o.recorrencias : ["Avulso", "Recorrente"];
+  fillOpts($("l-rec"), recs, recs.includes("Avulso") ? "Avulso" : recs[0]);
+  setLancTipo("Gastos");
+  $("l-valor").value = ""; $("l-est").value = ""; $("l-desc").value = ""; $("l-data").value = today();
+  const ests = [...new Set(((S.fin.state && S.fin.state.transactions) || []).map((t) => t.est).filter((e) => e && e !== "-"))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  $("l-est-list").replaceChildren(...ests.map((e) => h("option", { value: e })));
+  $("ov-lanc").hidden = false;
+  setTimeout(() => $("l-valor").focus(), 50);
+}
+document.querySelectorAll(".l-tipo button").forEach((b) => b.addEventListener("click", () => setLancTipo(b.dataset.tipo)));
+$("l-cat").addEventListener("change", () => (L.catTouched = true));
+$("l-tit").addEventListener("change", () => { const t = lastTx((x) => x.titular === $("l-tit").value); if (t) $("l-conta").value = t.conta; });
+$("l-est").addEventListener("change", () => {
+  const est = $("l-est").value.trim().toLowerCase(); if (!est) return;
+  const t = lastTx((x) => x.est.toLowerCase() === est && x.tipo === L.tipo);
+  if (t && !L.catTouched && lancCats().includes(t.catLabel)) $("l-cat").value = t.catLabel;
+});
+$("fin-fab").addEventListener("click", openLanc);
+$("l-cancel").addEventListener("click", () => ($("ov-lanc").hidden = true));
+$("lancform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const valor = parseMoney($("l-valor").value);
+  if (!isFinite(valor) || valor <= 0) { toast("Informe um valor maior que zero."); $("l-valor").focus(); return; }
+  const btn = $("l-save"); btn.disabled = true; btn.textContent = "Salvando…";
+  try {
+    const entry = { data: $("l-data").value, tipo: L.tipo, valor, categoria: $("l-cat").value, titular: $("l-tit").value, conta: $("l-conta").value,
+      estabelecimento: $("l-est").value.trim(), recorrencia: $("l-rec").value, descricao: $("l-desc").value.trim() };
+    const res = await invokeAi({ mode: "add", workspace_id: S.finSources[0].workspace_id, entries: [entry] }, "finance-data");
+    if (!res.added) throw new Error((res.problems && res.problems[0]) || "Nada foi salvo.");
+    $("ov-lanc").hidden = true;
+    toast(`${L.tipo === "Rendas" ? "Renda" : "Gasto"} de R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} salvo na planilha.`);
+    loadFinance();
+  } catch (err) { toast("Não salvou: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Salvar na planilha"; }
+});
+
 /* ================= Assistente ================= */
+const AI_SUGGEST_FIN = [
+  "Quanto gastamos este mês e como está em relação às metas?",
+  "Quais categorias mais cresceram nos últimos 3 meses?",
+  "Onde dá para economizar?",
+  "Registra um gasto de R$ 45 no iFood hoje"
+];
 const AI_SUGGEST = [
   "Quais são as prioridades para hoje e amanhã?",
   "Resuma o que está atrasado, agrupado por cliente.",
   "Monte uma sugestão de agenda para a semana.",
   "O que eu concluí nos últimos 7 dias?"
 ];
-const aiConv = () => { const ws = currentWs(); if (!S.ai.has(ws.id)) S.ai.set(ws.id, []); return S.ai.get(ws.id); };
+const aiFin = () => S.mod === "fin";
+const aiKey = () => (aiFin() ? "fin" : currentWs().id);
+const aiConv = () => { const k = aiKey(); if (!S.ai.has(k)) S.ai.set(k, []); return S.ai.get(k); };
 function esc(t) { return t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 function mdLite(text) {
   const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
@@ -1009,8 +1087,10 @@ function renderAi() {
   const conv = aiConv();
   if (!conv.length) {
     log.append(h("div", { class: "ai-empty" }, [
-      h("p", { text: `Pergunte sobre as tarefas de ${currentWs().name} ou peça mudanças. Nada muda sem você confirmar.` }),
-      ...AI_SUGGEST.map((q) => h("button", { type: "button", class: "pill", text: q, onclick: () => sendAi(q) }))
+      h("p", { text: aiFin()
+        ? "Pergunte sobre as finanças da família ou peça para registrar um gasto ou renda. Nada vai para a planilha sem você confirmar."
+        : `Pergunte sobre as tarefas de ${currentWs().name} ou peça mudanças. Nada muda sem você confirmar.` }),
+      ...(aiFin() ? AI_SUGGEST_FIN : AI_SUGGEST).map((q) => h("button", { type: "button", class: "pill", text: q, onclick: () => sendAi(q) }))
     ]));
   }
   conv.forEach((m, i) => {
@@ -1022,12 +1102,12 @@ function renderAi() {
     if (m.proposal) {
       const pr = m.proposal, closed = !!pr.status;
       log.append(h("div", { class: "ai-proposal" + (closed ? " closed" : "") }, [
-        h("h5", { text: closed ? (pr.status === "applied" ? "Aplicado" : pr.status === "partial" ? "Aplicado em parte" : "Descartado") : `Mudanças propostas (${pr.actions.length})` }),
+        h("h5", { text: closed ? (pr.status === "applied" ? (pr.kind === "finance" ? "Salvo na planilha" : "Aplicado") : pr.status === "partial" ? "Aplicado em parte" : "Descartado") : pr.kind === "finance" ? `Lançamentos propostos (${pr.actions.length})` : `Mudanças propostas (${pr.actions.length})` }),
         h("ul", {}, pr.actions.map((a) => h("li", { text: a.label }))),
         ...(pr.errors || []).map((e) => h("div", { class: "ai-note", text: e })),
         closed ? null : h("div", { class: "row" }, [
           h("button", { type: "button", class: "btn secondary", text: "Descartar", onclick: () => { pr.status = "discarded"; conv.push({ role: "user", content: "(descartei as mudanças propostas)" }); renderAi(); } }),
-          h("button", { type: "button", class: "btn", text: "Confirmar", onclick: (e) => applyAi(pr, e.currentTarget) })
+          h("button", { type: "button", class: "btn", text: pr.kind === "finance" ? "Salvar na planilha" : "Confirmar", onclick: (e) => applyAi(pr, e.currentTarget) })
         ])
       ]));
     }
@@ -1036,8 +1116,8 @@ function renderAi() {
   log.scrollTop = log.scrollHeight;
   $("ai-send").disabled = S.aiBusy;
 }
-async function invokeAi(body) {
-  const { data, error } = await sb.functions.invoke("assistant", { body });
+async function invokeAi(body, fn = "assistant") {
+  const { data, error } = await sb.functions.invoke(fn, { body });
   if (error) {
     let msg = error.message;
     try { const j = await error.context.json(); msg = j.error || msg; } catch { /* sem corpo */ }
@@ -1049,12 +1129,14 @@ async function invokeAi(body) {
 async function sendAi(text) {
   text = (text || "").trim();
   if (!text || S.aiBusy) return;
-  const ws = currentWs(), conv = aiConv();
+  const fin = aiFin(), ws = currentWs(), conv = aiConv();
   conv.push({ role: "user", content: text });
   S.aiBusy = true; renderAi();
   try {
     const messages = conv.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.proposal ? `${m.content}\n[Propus: ${m.proposal.actions.map((a) => a.label).join("; ")}${m.proposal.status ? ` | ${m.proposal.status === "discarded" ? "descartado" : "aplicado"}` : ""}]` : m.content }));
-    const data = await invokeAi({ mode: "chat", workspace_id: ws.id, messages });
+    const data = fin
+      ? await invokeAi({ mode: "chat", workspace_id: S.finSources[0].workspace_id, messages }, "finance-data")
+      : await invokeAi({ mode: "chat", workspace_id: ws.id, messages });
     conv.push({ role: "assistant", content: data.reply || "", proposal: data.proposal || null, problems: data.problems || [] });
   } catch (e) {
     conv.push({ role: "assistant", error: true, content: "Não consegui responder: " + e.message });
@@ -1062,6 +1144,15 @@ async function sendAi(text) {
 }
 async function applyAi(pr, btn) {
   btn.disabled = true; btn.textContent = "Aplicando…";
+  if (pr.kind === "finance") {
+    try {
+      const res = await invokeAi({ mode: "add", workspace_id: S.finSources[0].workspace_id, entries: pr.actions.map((a) => a.entry) }, "finance-data");
+      pr.status = res.problems && res.problems.length ? "partial" : "applied"; pr.errors = res.problems || [];
+      toast(`${res.added} ${res.added === 1 ? "lançamento salvo" : "lançamentos salvos"} na planilha.`);
+      loadFinance();
+    } catch (e) { toast("Não salvou: " + e.message); btn.disabled = false; btn.textContent = "Salvar na planilha"; return; }
+    renderAi(); return;
+  }
   try {
     const res = await invokeAi({ mode: "apply", workspace_id: currentWs().id, actions: pr.actions });
     pr.status = res.errors && res.errors.length ? (res.applied ? "partial" : "discarded") : "applied";
@@ -1071,9 +1162,12 @@ async function applyAi(pr, btn) {
   } catch (e) { toast("Não aplicou: " + e.message); btn.disabled = false; btn.textContent = "Confirmar"; return; }
   renderAi();
 }
-$("btn-ai").addEventListener("click", () => { $("ov-ai").hidden = false; renderAi(); setTimeout(() => $("ai-text").focus(), 50); });
+$("btn-ai").addEventListener("click", () => {
+  $("ai-title").textContent = aiFin() ? "Assistente de finanças" : "Assistente";
+  $("ov-ai").hidden = false; renderAi(); setTimeout(() => $("ai-text").focus(), 50);
+});
 $("ai-close").addEventListener("click", () => ($("ov-ai").hidden = true));
-$("ai-clear").addEventListener("click", () => { S.ai.set(currentWs().id, []); renderAi(); });
+$("ai-clear").addEventListener("click", () => { S.ai.set(aiKey(), []); renderAi(); });
 $("ai-form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("ai-text"); const v = t.value; t.value = ""; t.style.height = ""; sendAi(v); });
 $("ai-text").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("ai-form").requestSubmit(); } });
 $("ai-text").addEventListener("input", (e) => { const t = e.target; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; });
@@ -1228,7 +1322,7 @@ $("btn-filters").addEventListener("click", () => {
   $("filters").classList.toggle("open", open); $("btn-filters").setAttribute("aria-expanded", String(open));
 });
 $("fclear").addEventListener("click", () => { S.project = S.client = S.assignee = S.due = S.prio = ""; render(); });
-for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)], ["ov-notif", () => ($("ov-notif").hidden = true)], ["ov-ai", () => ($("ov-ai").hidden = true)]]) {
+for (const [ov, close] of [["ov-task", closeTask], ["ov-ws", closeWs], ["ov-me", () => ($("ov-me").hidden = true)], ["ov-bulk", () => ($("ov-bulk").hidden = true)], ["ov-notif", () => ($("ov-notif").hidden = true)], ["ov-ai", () => ($("ov-ai").hidden = true)], ["ov-lanc", () => ($("ov-lanc").hidden = true)]]) {
   $(ov).addEventListener("click", (e) => { if (e.target === $(ov)) close(); });
 }
 document.addEventListener("keydown", (e) => {
