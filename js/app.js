@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { buildState as buildFinance, renderFinance } from "./finance.js?v=12";
+import { buildState as buildFinance, renderFinance } from "./finance.js?v=13";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -946,6 +946,7 @@ function applyMod() {
   $("mod-title").textContent = MOD_TITLES[S.mod];
   document.title = MOD_TITLES[S.mod];
   if (S.mod === "fin" && !S.fin.state && !S.fin.loading && !S.fin.error) loadFinance();
+  else if (S.mod === "fin" && S.fin.state) renderFinance($("fin-root"), S.fin.state, S.fin.ui);
 }
 $("modnav").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-mod]");
