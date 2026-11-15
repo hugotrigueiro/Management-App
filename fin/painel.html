@@ -1,0 +1,2874 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+
+<title>Finanças Hugo &amp; Bárbara</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --plane:        #f2f4f2;
+    --surface:      #fbfcfa;
+    --surface-2:    #eef1ee;
+    --ink:          #0e1413;
+    --ink-2:        #4d5856;
+    --muted:        #838e8c;
+    --line:         #dfe4e1;
+    --line-strong:  #c7cfcc;
+    --accent:       #0d6e68;
+    --accent-soft:  rgba(13,110,104,0.12);
+    --accent-track: rgba(13,110,104,0.14);
+    --accent-sel:   rgba(13,110,104,0.20);
+
+    --gastos:       #e74c3c;
+    --rendas:       #27ae60;
+    --pl:           #3498db;
+    --gastos-ink:   #c0392b;
+    --rendas-ink:   #1b7d45;
+
+    --good:         #27ae60;
+    --good-ink:     #1b7d45;
+    --good-bg:      rgba(39,174,96,0.13);
+    --warn:         #fab219;
+    --warn-ink:     #7d5600;
+    --warn-bg:      rgba(250,178,25,0.18);
+    --crit:         #e74c3c;
+    --crit-ink:     #c0392b;
+    --crit-bg:      rgba(231,76,60,0.13);
+
+    --sans: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* Mantido como token de "voz de dado". Montserrat não é monoespaçada, então
+       todo número que precisa alinhar carrega font-variant-numeric: tabular-nums. */
+    --mono: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --r: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane:        #0b0d0d;
+      --surface:      #16191a;
+      --surface-2:    #1e2222;
+      --ink:          #f1f4f3;
+      --ink-2:        #b4bebc;
+      --muted:        #7f8a88;
+      --line:         #262b2b;
+      --line-strong:  #343b3a;
+      --accent:       #2fa79f;
+      --accent-soft:  rgba(47,167,159,0.16);
+      --accent-track: rgba(47,167,159,0.18);
+      --accent-sel:   rgba(47,167,159,0.26);
+
+      --gastos-ink:   #ff7b6e;
+      --rendas-ink:   #4ecb7b;
+
+      --good-ink:     #4ecb7b;
+      --good-bg:      rgba(39,174,96,0.20);
+      --warn-ink:     #fab219;
+      --warn-bg:      rgba(250,178,25,0.16);
+      --crit-ink:     #ff7b6e;
+      --crit-bg:      rgba(231,76,60,0.20);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane:        #0b0d0d;
+    --surface:      #16191a;
+    --surface-2:    #1e2222;
+    --ink:          #f1f4f3;
+    --ink-2:        #b4bebc;
+    --muted:        #7f8a88;
+    --line:         #262b2b;
+    --line-strong:  #343b3a;
+    --accent:       #2fa79f;
+    --accent-soft:  rgba(47,167,159,0.16);
+    --accent-track: rgba(47,167,159,0.18);
+    --accent-sel:   rgba(47,167,159,0.26);
+
+    --gastos-ink:   #ff7b6e;
+    --rendas-ink:   #4ecb7b;
+
+    --good-ink:     #4ecb7b;
+    --good-bg:      rgba(39,174,96,0.20);
+    --warn-ink:     #fab219;
+    --warn-bg:      rgba(250,178,25,0.16);
+    --crit-ink:     #ff7b6e;
+    --crit-bg:      rgba(231,76,60,0.20);
+  }
+
+  body {
+    background: var(--plane);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 24px 56px;
+  }
+
+  /* ---------- header ---------- */
+  .masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  .masthead h1 {
+    font-size: 19px; font-weight: 600; margin: 0;
+    text-transform: uppercase; letter-spacing: 0.055em;
+    text-wrap: balance;
+  }
+  .atualizar {
+    display: flex; align-items: center; gap: 10px; margin-left: auto;
+  }
+  .atualizar button {
+    appearance: none; cursor: pointer;
+    font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--accent);
+    background: var(--surface); border: 1px solid var(--accent);
+    border-radius: 999px; padding: 5px 14px;
+    transition: background .12s ease, color .12s ease;
+  }
+  .atualizar button:hover:not(:disabled) { background: var(--accent); color: #fff; }
+  .atualizar button:disabled { opacity: .55; cursor: progress; }
+  .atualizar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .atualizar button.ghost {
+    color: var(--ink-2); border-color: var(--line-strong); background: transparent;
+  }
+  .atualizar button.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+  .atualizar .st { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .atualizar .st.ok { color: var(--rendas-ink); }
+  .atualizar .st.erro { color: var(--gastos-ink); }
+
+  .provenance {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    display: flex; gap: 22px; margin-top: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--muted);
+    padding: 0 0 10px; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    transition: color .14s ease;
+  }
+  .tab:hover { color: var(--ink-2); }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  .panelpick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 18px; }
+  .panelpick .lbl {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted);
+  }
+  .panelpick select {
+    font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 6px; padding: 7px 10px; cursor: pointer;
+  }
+  .panelpick select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- filters ---------- */
+  .filters {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 22px;
+    margin-top: 22px; padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field > span.lbl {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted);
+  }
+  .dates { display: flex; align-items: center; gap: 8px; }
+  .dates span.sep { color: var(--muted); font-size: 12px; }
+  input[type="date"] {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    background: var(--plane); border: 1px solid var(--line-strong);
+    border-radius: 5px; padding: 6px 8px; min-width: 0;
+  }
+  input[type="date"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .seg { display: flex; background: var(--plane); border: 1px solid var(--line-strong); border-radius: 5px; padding: 2px; }
+  .seg button {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    font-family: var(--sans); font-size: 12.5px; font-weight: 500; color: var(--ink-2);
+    padding: 5px 11px; border-radius: 4px; white-space: nowrap;
+    transition: background .12s ease, color .12s ease;
+  }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 600; }
+  :root[data-theme="dark"] .seg button[aria-pressed="true"],
+  .seg button[aria-pressed="true"] { color: #fff; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .ms { position: relative; }
+  .ms-btn {
+    appearance: none; cursor: pointer; text-align: left; position: relative;
+    font-family: var(--sans); font-size: 12.5px; font-weight: 500; color: var(--ink);
+    background: var(--plane); border: 1px solid var(--line-strong);
+    border-radius: 5px; padding: 6px 26px 6px 10px;
+    min-width: 132px; max-width: 200px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ms-btn::after {
+    content: "▾"; position: absolute; right: 9px; top: 50%;
+    transform: translateY(-50%); color: var(--muted); font-size: 10px;
+  }
+  .ms-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ms-btn.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .ms-btn[aria-expanded="true"] { border-color: var(--accent); }
+  .ms-pop {
+    position: absolute; z-index: 30; top: calc(100% + 4px); left: 0;
+    min-width: 240px; max-height: 280px; overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 6px; padding: 6px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+  }
+  .ms-acts {
+    display: flex; justify-content: flex-end;
+    padding: 2px 4px 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+  }
+  .ms-acts button {
+    appearance: none; cursor: pointer; background: none; border: 0;
+    font-family: var(--sans); font-size: 11.5px; color: var(--accent);
+    text-decoration: underline; text-underline-offset: 2px; padding: 2px 4px;
+  }
+  .ms-pop label {
+    display: flex; align-items: center; gap: 8px; padding: 5px 6px;
+    border-radius: 4px; font-size: 12.5px; cursor: pointer; color: var(--ink);
+  }
+  .ms-pop label:hover { background: var(--accent-soft); }
+  .ms-pop input { accent-color: var(--accent); margin: 0; flex: none; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button {
+    appearance: none; cursor: pointer;
+    font-family: var(--sans); font-size: 12px; color: var(--ink-2);
+    background: transparent; border: 1px solid var(--line-strong);
+    border-radius: 999px; padding: 4px 11px;
+    transition: border-color .12s ease, color .12s ease, background .12s ease;
+  }
+  .presets button:hover { border-color: var(--accent); color: var(--accent); }
+  .presets button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- scorecards ---------- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); gap: 12px; margin-top: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    padding: 15px 16px 16px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .card .lbl {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted);
+  }
+  .card .val { font-size: 27px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .card .sub { font-size: 12px; color: var(--ink-2); }
+  .card .sub b { font-weight: 600; color: var(--ink); }
+
+  .meter { display: flex; flex-direction: column; gap: 5px; margin-top: 1px; }
+  .meter .track {
+    height: 7px; border-radius: 4px; background: var(--accent-track); overflow: hidden;
+  }
+  .meter .fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width .3s ease; }
+  .meter .fill.is-warn { background: var(--warn); }
+  .meter .fill.is-crit { background: var(--crit); }
+  .meter .foot {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .meter .foot .pct { font-weight: 600; color: var(--ink-2); }
+  .meter .foot .pct.is-warn { color: var(--warn-ink); }
+  .meter .foot .pct.is-crit { color: var(--crit-ink); }
+  .meter .foot .pct.is-good { color: var(--good-ink); }
+
+  /* ---------- section + table ---------- */
+  .section-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+    gap: 6px 16px; margin: 30px 0 10px;
+  }
+  .section-head h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 0 auto 0 0; }
+  .section-head .hint { font-size: 11.5px; color: var(--muted); }
+
+  .table-shell {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    overflow-x: auto;
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 880px; }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--surface-2);
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2);
+    text-align: right; padding: 9px 12px; white-space: nowrap;
+    border-bottom: 1px solid var(--line-strong);
+    cursor: pointer; user-select: none;
+  }
+  thead th:first-child { text-align: left; }
+  thead th:hover { color: var(--accent); }
+  thead th:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  thead th .arrow { opacity: 0; margin-left: 4px; }
+  thead th[data-active="1"] { color: var(--accent); }
+  thead th[data-active="1"] .arrow { opacity: 1; }
+
+  tbody td, tfoot td {
+    padding: 8px 12px; text-align: right; white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono); font-size: 12.5px;
+  }
+  tbody td:first-child, tfoot td:first-child {
+    text-align: left; font-family: var(--sans); font-size: 13px; font-weight: 500;
+  }
+  tbody tr:hover td { background: var(--accent-soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tfoot td {
+    border-top: 2px solid var(--line-strong); border-bottom: 0;
+    font-weight: 600; color: var(--ink); background: var(--surface-2);
+  }
+  td.gastos { font-weight: 600; }
+  .est { color: var(--accent); font-weight: 600; margin-left: 3px; font-size: 11px; }
+
+  tbody tr { cursor: pointer; }
+  tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  tbody tr.sel td { background: var(--accent-sel); }
+  tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  tbody tr.sel:hover td { background: var(--accent-sel); }
+  tbody.has-sel tr:not(.sel) td { opacity: .40; }
+
+  .xfilter {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    margin-top: 12px; padding: 9px 14px;
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: var(--r);
+  }
+  .xfilter .lbl {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.10em; text-transform: uppercase; color: var(--accent);
+  }
+  .xchips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .xchip {
+    appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--sans); font-size: 13px; font-weight: 600; color: #fff;
+    background: var(--accent); border: 0; border-radius: 999px; padding: 4px 8px 4px 12px;
+  }
+  .xclear {
+    appearance: none; cursor: pointer; background: none; border: 0;
+    font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--accent);
+    text-decoration: underline; text-underline-offset: 3px; padding: 2px 4px;
+  }
+  .xclear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  kbd {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+    background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--line-strong); border-bottom-width: 2px;
+    border-radius: 4px; padding: 1px 5px;
+  }
+  .xchip .x {
+    font-size: 14px; line-height: 1; opacity: .75;
+    border-radius: 50%; width: 17px; height: 17px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.18);
+  }
+  .xchip:hover .x { opacity: 1; }
+  .xchip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .xhint { font-size: 11.5px; color: var(--ink-2); }
+
+  .card .lbl .scope { color: var(--accent); }
+  td.qtd[title] { cursor: help; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 8px; border-radius: 999px;
+    font-weight: 600; font-size: 12px;
+  }
+  .chip .g { font-size: 10px; line-height: 1; }
+  .chip.is-crit { background: var(--crit-bg); color: var(--crit-ink); box-shadow: inset 0 0 0 1px var(--crit); }
+  .chip.is-warn { background: var(--warn-bg); color: var(--warn-ink); box-shadow: inset 0 0 0 1px var(--warn); }
+  .chip.is-good { background: var(--good-bg); color: var(--good-ink); box-shadow: inset 0 0 0 1px var(--good); }
+
+  .empty { padding: 44px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  @media (max-width: 820px) { .duo { grid-template-columns: 1fr; } }
+  .tbl-sm { max-height: 430px; overflow-y: auto; }
+  .tbl-sm table { min-width: 400px; }
+  .tbl-sm tfoot td { position: sticky; bottom: 0; z-index: 1; }
+
+  .tbl-tx { max-height: 520px; overflow-y: auto; }
+  .tbl-tx table { min-width: 960px; }
+  .tbl-tx tbody td:first-child, .tbl-tx tfoot td:first-child {
+    text-align: right; font-family: var(--mono); font-size: 11.5px;
+    color: var(--muted); font-weight: 400;
+  }
+  .tbl-tx th.l, .tbl-tx td.l { text-align: left; }
+  .tbl-tx td.l { font-family: var(--sans); font-size: 12.5px; font-weight: 400; }
+  .tbl-tx td.desc { max-width: 280px; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); }
+  .tbl-tx td.pos { color: var(--rendas-ink); font-weight: 600; }
+  .tbl-tx tfoot td { position: sticky; bottom: 0; z-index: 1; }
+  .tbl-tx tfoot td:first-child { color: var(--ink); font-weight: 600; }
+
+  .cards-5 { grid-template-columns: repeat(auto-fit, minmax(186px, 1fr)); }
+  .card .val.neg { color: var(--gastos-ink); }
+  .card .val.pos { color: var(--rendas-ink); }
+
+  .chartbox {
+    position: relative;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 14px 16px 10px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
+  .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .chartscroll { overflow-x: auto; }
+  .chartscroll svg { display: block; }
+  .chart-grid { stroke: var(--line); stroke-width: 1; }
+  .chart-axis { stroke: var(--line-strong); stroke-width: 1; }
+  .chart-tick {
+    font-family: var(--mono); font-size: 10px; fill: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .chart-xlab { font-family: var(--mono); font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chart-val { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chart-val.dentro { fill: #ffffff; }
+  .chart-val.fora { fill: var(--ink-2); }
+  .chart-hit { fill: transparent; cursor: pointer; }
+  .viewsel {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 5px; padding: 5px 8px; cursor: pointer;
+  }
+  .viewsel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .linha-mark { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ponto-mark { stroke: var(--surface); stroke-width: 2; }
+  .banda-mark { stroke: none; }
+  .crosshair { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+  .legend i.faixa { border-radius: 2px; opacity: .30; }
+
+  .tip {
+    position: absolute; z-index: 5; pointer-events: none;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 6px; padding: 8px 10px; min-width: 150px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.13);
+  }
+  .tip .m {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px;
+  }
+  .tip .r { display: flex; align-items: center; gap: 7px; font-size: 12.5px; margin-top: 3px; }
+  .tip .r i { width: 9px; height: 9px; border-radius: 2px; }
+  .tip .r b { margin-left: auto; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .tip .sep { border-top: 1px solid var(--line); margin: 6px 0 4px; }
+
+  .metawarn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--warn-ink);
+    background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn);
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .xchip .dim {
+    font-family: var(--mono); font-size: 9px; font-weight: 600;
+    letter-spacing: 0.08em; opacity: .72;
+  }
+
+  /* ---------- notes ---------- */
+  details.notes {
+    margin-top: 22px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 12px 16px;
+  }
+  details.notes summary {
+    cursor: pointer; font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+  details.notes summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  details.notes ul { margin: 10px 0 2px; padding-left: 18px; }
+  details.notes li { font-size: 12.5px; color: var(--ink-2); margin-bottom: 6px; line-height: 1.5; }
+  details.notes code { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
+
+  /* ---------- patrimonio placeholder ---------- */
+  .pending {
+    margin-top: 22px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 22px 20px;
+  }
+  .pending h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+  .pending p { margin: 0 0 16px; font-size: 13px; color: var(--ink-2); max-width: 62ch; }
+  .inv { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .inv div {
+    border: 1px solid var(--line); border-radius: 5px; padding: 10px 12px; background: var(--plane);
+  }
+  .inv .k {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 3px;
+  }
+  .inv .v { font-size: 12.5px; color: var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+  @media (max-width: 560px) {
+    .card .val { font-size: 23px; }
+    .filters { gap: 12px 16px; }
+  }
+
+  /* ---------- dentro do app ---------- */
+  html, body { background: transparent !important; }
+  .wrap { padding-block: 4px 24px; }
+  .masthead h1, #barraAtualizar { display: none !important; }
+  .cards { grid-template-columns: repeat(auto-fit, minmax(min(255px, 100%), 1fr)); }
+  .cards-5 { grid-template-columns: repeat(auto-fit, minmax(min(186px, 100%), 1fr)); }
+  .card, .filters, .chartbox, .table-shell { min-width: 0; max-width: 100%; }
+  @media (max-width: 560px) {
+    .wrap { padding-inline: 14px; }
+    .cards, .cards-5 { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cards > .card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .card { padding: 12px; gap: 6px; }
+    .card .val { font-size: clamp(16px, 5.2vw, 21px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .sub, .meter .foot { font-size: 11px; }
+    .filters { padding: 12px; }
+    .dates { flex-wrap: wrap; }
+    .dates input[type="date"] { flex: 1 1 120px; }
+    .section-head { flex-wrap: wrap; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Dashboard de Gestão Financeira</h1>
+    <span class="provenance" id="prov">carregando…</span>
+    <span class="atualizar" id="barraAtualizar">
+      <span class="st" id="statusAtualizar"></span>
+      <input type="file" id="arqPlanilha" accept=".xlsx,.xlsm,.xls" hidden>
+      <button type="button" class="ghost" id="btnArquivo"
+        title="Baixe a planilha do Google Sheets como .xlsx e envie aqui">Enviar planilha</button>
+      <button type="button" id="btnAtualizar">Atualizar dados</button>
+    </span>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Seções do painel">
+    <button class="tab" id="tab-dom" role="tab" aria-selected="true" aria-controls="panel-dom">Finanças Domésticas</button>
+    <button class="tab" id="tab-pat" role="tab" aria-selected="false" aria-controls="panel-pat">Patrimônio</button>
+  </div>
+
+  <!-- ============ FINANÇAS DOMÉSTICAS ============ -->
+  <section id="panel-dom" role="tabpanel" aria-labelledby="tab-dom">
+    <div class="panelpick">
+      <label class="lbl" for="panelSel">Painel</label>
+      <select id="panelSel">
+        <option value="mes">Monitoramento do Mês</option>
+        <option value="hist">Histórico de Performance</option>
+      </select>
+      <span class="xhint" id="panelHint"></span>
+    </div>
+
+    <div class="filters">
+      <label class="field">
+        <span class="lbl">Período</span>
+        <span class="dates">
+          <input type="date" id="dtFrom" aria-label="Data inicial">
+          <span class="sep">até</span>
+          <input type="date" id="dtTo" aria-label="Data final">
+        </span>
+      </label>
+
+      <div class="field">
+        <span class="lbl">Atalhos</span>
+        <div class="presets" id="presets">
+          <button type="button" data-p="mes">Mês atual</button>
+          <button type="button" data-p="mesAnt">Mês passado</button>
+          <button type="button" data-p="3m">Últimos 3 meses</button>
+          <button type="button" data-p="ano">Ano atual</button>
+          <button type="button" data-p="tudo">Tudo</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="lbl">Titular</span>
+        <div class="seg" id="segTitular" role="group" aria-label="Filtro de titular"></div>
+      </div>
+    </div>
+
+    <div class="xfilter" id="xfilter" hidden>
+      <span class="lbl">Filtro da tabela</span>
+      <span class="xchips" id="xchips"></span>
+      <button type="button" class="xclear" id="xclear" hidden>Limpar tudo</button>
+      <span class="xhint"><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd> + clique soma categorias &middot; <kbd>Esc</kbd> ou clique fora limpa</span>
+    </div>
+
+    <div id="panel-mes">
+    <div class="cards">
+      <div class="card">
+        <span class="lbl" id="lblGastos">Total de gastos</span>
+        <span class="val" id="kGastos">—</span>
+        <div class="meter">
+          <div class="track"><div class="fill" id="barGastos" style="width:0%"></div></div>
+          <div class="foot">
+            <span class="pct" id="pctGastos">—</span>
+            <span id="metaGastos">meta —</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="lbl" id="lblRendas">Total de rendas</span>
+        <span class="val" id="kRendas">—</span>
+        <span class="sub" id="subRendas">—</span>
+      </div>
+
+      <div class="card">
+        <span class="lbl" id="lblRetorno">Retorno (rendas − gastos)</span>
+        <span class="val" id="kRetorno">—</span>
+        <div class="meter">
+          <div class="track"><div class="fill" id="barRetorno" style="width:0%"></div></div>
+          <div class="foot">
+            <span class="pct" id="pctRetorno">—</span>
+            <span id="baseRetorno">de —</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>Tabela de Gastos (Categoria &amp; Metas)</h2>
+      <span class="hint" id="tblHint"></span>
+      <span class="metawarn" id="metaWarn" hidden></span>
+    </div>
+
+    <div class="table-shell">
+      <table id="tbl">
+        <thead>
+          <tr id="thead-row"></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+    <div class="empty" id="emptyState" hidden>Nenhum gasto registrado neste período.</div>
+
+    <div class="section-head">
+      <h2>Tabela de Gastos (Categoria &amp; Estabelecimento)</h2>
+      <span class="hint" id="miniHint"></span>
+    </div>
+
+    <div class="duo">
+      <div class="table-shell tbl-sm">
+        <table>
+          <thead><tr id="headCat"></tr></thead>
+          <tbody id="bodyCat"></tbody>
+          <tfoot id="footCat"></tfoot>
+        </table>
+      </div>
+      <div class="table-shell tbl-sm">
+        <table>
+          <thead><tr id="headEst"></tr></thead>
+          <tbody id="bodyEst"></tbody>
+          <tfoot id="footEst"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>Tabela de Transações (Categoria &amp; Estabelecimento)</h2>
+      <span class="hint" id="txHint"></span>
+    </div>
+
+    <div class="table-shell tbl-tx">
+      <table>
+        <thead><tr id="headTx"></tr></thead>
+        <tbody id="bodyTx"></tbody>
+        <tfoot id="footTx"></tfoot>
+      </table>
+    </div>
+
+    <details class="notes">
+      <summary>Notas sobre os dados</summary>
+      <ul>
+        <li><b>Média mensal</b> vem da aba <code>Metas</code>: <code>VALOR ACUMULADO ÷ QUANTIDADE MESES</code> da última linha da categoria dentro do período. Como <code>QUANTIDADE MESES</code> começa em branco (0) no primeiro mês de cada categoria, ela conta um mês a menos do que o acumulado cobre — em set/2026 marca 9 para 10 meses de dados, o que infla a média em ~11%. Mantive sua fórmula; posso trocar pela contagem real de meses se preferir.</li>
+        <li>Lançamentos de <b>Gastos com valor positivo</b> (estorno, reembolso, repasse de terceiro) são <b>abatidos</b> do total da categoria, não somados — são 36 no histórico. Eles não entram na <code>QTD</code> (que conta saídas) nem no ticket médio; a marcação <span class="est">·n</span> ao lado da QTD mostra quantos foram abatidos, e o total líquido é o que vai para <code>GASTOS</code>. Mesma convenção da aba <code>Metas</code>, cujo <code>VALOR ACUMULADO</code> já vem líquido.</li>
+        <li>As <b>metas são mensais e por categoria</b> — não existem por titular nem por estabelecimento. Ao filtrar por um desses, os gastos diminuem mas a coluna <code>META</code> continua cheia, e o Δ fica otimista; um aviso aparece ao lado do título da tabela quando isso acontece. Diga se prefere ratear.</li>
+        <li>Cada mês tocado pelo período soma a <b>meta cheia</b> daquele mês (sem rateio por dias), como você pediu.</li>
+        <li>Em <b>dez/2025</b> a aba <code>Metas</code> tem <code>💼 Trabalho</code> duplicado (R$ 50 + R$ 700); o painel soma os dois, igual à planilha.</li>
+        <li><code>⚫ Outros</code> e <code>🦁 Impostos</code> não têm meta cadastrada — aparecem com meta R$ 0. <code>🏠 Moradia</code> só tem meta a partir de jan/2026.</li>
+        <li>Lançamentos com tipo <code>Aquisição Imóvel</code> e <code>Amortização</code> ficam fora de gastos e rendas (entram na aba Patrimônio).</li>
+        <li>A <b>Tabela de Transações</b> lista só lançamentos de <code>Gastos</code>, porque a coluna <code>%</code> só faz sentido sobre um total de mesmo sinal. Os estornos aparecem nela com valor positivo, em verde. Diga se quiser as rendas junto.</li>
+      </ul>
+    </details>
+    </div><!-- /panel-mes -->
+
+    <div id="panel-hist" hidden>
+      <div class="cards cards-5">
+        <div class="card">
+          <span class="lbl">Meta mensal</span>
+          <span class="val" id="hMeta">—</span>
+          <span class="sub" id="hMetaSub">—</span>
+        </div>
+        <div class="card">
+          <span class="lbl">Gastos</span>
+          <span class="val" id="hGastos">—</span>
+          <span class="sub" id="hGastosSub">—</span>
+        </div>
+        <div class="card">
+          <span class="lbl">Rendas</span>
+          <span class="val" id="hRendas">—</span>
+          <span class="sub" id="hRendasSub">—</span>
+        </div>
+        <div class="card">
+          <span class="lbl">Retorno</span>
+          <span class="val" id="hRetorno">—</span>
+          <span class="sub" id="hRetornoSub">—</span>
+        </div>
+        <div class="card">
+          <span class="lbl">Saldo</span>
+          <span class="val" id="hSaldo">—</span>
+          <span class="sub" id="hSaldoSub">—</span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2 id="chartTitle">Rendas e Gastos por Mês</h2>
+        <span class="hint" id="chartHint"></span>
+        <div class="seg" id="segChart" role="group" aria-label="Visão do gráfico">
+          <button type="button" data-v="ambos" aria-pressed="true">Rendas e Gastos</button>
+          <button type="button" data-v="retorno" aria-pressed="false">Retorno</button>
+        </div>
+      </div>
+      <div class="chartbox">
+        <div class="legend" id="chartLegend"></div>
+        <div class="chartscroll" id="chartScroll"></div>
+        <div class="tip" id="chartTip" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PATRIMÔNIO ============ -->
+  <section id="panel-pat" role="tabpanel" aria-labelledby="tab-pat" hidden>
+    <div class="filters">
+      <label class="field">
+        <span class="lbl">Período</span>
+        <span class="dates">
+          <input type="date" id="patFrom" aria-label="Data inicial do patrimônio">
+          <span class="sep">até</span>
+          <input type="date" id="patTo" aria-label="Data final do patrimônio">
+        </span>
+      </label>
+      <div class="field">
+        <span class="lbl">Categoria</span>
+        <div id="msPatCat"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Movimentação</span>
+        <div id="msPatMov"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Descrição</span>
+        <div id="msPatDesc"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Titular</span>
+        <div class="seg" id="segPatTit" role="group" aria-label="Filtro de titular"></div>
+      </div>
+    </div>
+
+    <div class="cards cards-5">
+      <div class="card">
+        <span class="lbl">Ativos</span>
+        <span class="val" id="pAtivos">—</span>
+        <span class="sub" id="pAtivosSub">—</span>
+      </div>
+      <div class="card">
+        <span class="lbl">Passivos</span>
+        <span class="val" id="pPassivos">—</span>
+        <span class="sub" id="pPassivosSub">—</span>
+      </div>
+      <div class="card">
+        <span class="lbl">Patrimônio líquido</span>
+        <span class="val" id="pLiquido">—</span>
+        <span class="sub" id="pLiquidoSub">—</span>
+      </div>
+      <div class="card">
+        <span class="lbl">Patrimônio investimentos</span>
+        <span class="val" id="pInvest">—</span>
+        <span class="sub" id="pInvestSub">—</span>
+      </div>
+      <div class="card">
+        <span class="lbl">Patrimônio imóveis</span>
+        <span class="val" id="pImoveis">—</span>
+        <span class="sub" id="pImoveisSub">—</span>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2 id="patChartTitle">Performance Patrimônio por Mês</h2>
+      <span class="hint" id="patChartHint"></span>
+      <div class="seg" id="segPatChart" role="group" aria-label="Visão do gráfico de patrimônio">
+        <button type="button" data-v="ambos" aria-pressed="true">Ativos e Passivos</button>
+        <button type="button" data-v="pl" aria-pressed="false">Patrimônio Líquido</button>
+      </div>
+    </div>
+    <div class="chartbox">
+      <div class="legend" id="patChartLegend"></div>
+      <div class="chartscroll" id="patChartScroll"></div>
+      <div class="tip" id="patChartTip" hidden></div>
+    </div>
+
+    <div class="section-head">
+      <h2 id="rendTitle">Rendimento por Mês</h2>
+      <span class="hint" id="rendHint"></span>
+      <select id="rendSel" class="viewsel" aria-label="Visão do gráfico de rendimento">
+        <option value="abs">Rendimento (R$)</option>
+        <option value="pct">Rendimento (%)</option>
+        <option value="sobre">Rendimento sobre o patrimônio (%)</option>
+        <option value="sim">Renda líquida simulada (R$)</option>
+        <option value="covGastos">Renda simulada ÷ gastos do mês (%)</option>
+        <option value="covRendas">Renda simulada ÷ rendas do mês (%)</option>
+      </select>
+    </div>
+    <div class="chartbox">
+      <div class="legend" id="rendLegend"></div>
+      <div class="chartscroll" id="rendScroll"></div>
+      <div class="tip" id="rendTip" hidden></div>
+    </div>
+
+    <details class="notes">
+      <summary>Notas sobre os dados</summary>
+      <ul>
+        <li><b>Aluguéis</b> (movimentação <code>Aluguéis</code>) somam integralmente ao rendimento do mês: <b>rendimento = saldo do mês − saldo anterior − movimentações + aluguéis</b>. Como são renda e não saldo, não entram nos scorecards de ativos nem no patrimônio líquido, mesmo que o filtro de Movimentação os inclua. Eles seguem os filtros de categoria (<code>Imóveis</code>), descrição e titular.</li>
+        <li><b>Rendimento</b> = saldo do mês − saldo do mês anterior − movimentações do mês. As movimentações entram com o próprio sinal: aporte é positivo e sai da conta, saque é negativo e volta para a conta. Tratar só os aportes distorceria fevereiro de −0,29% para −10,69%, porque o saque de R$ 12.161,69 viraria prejuízo.</li>
+        <li>O rendimento usa apenas linhas de <code>Saldo</code> de ativos — o imóvel (lançado como <code>Valor</code>) não rende, e o financiamento é passivo. Este gráfico ignora o filtro de Movimentação, porque precisa ver saldos e movimentações juntos; os demais filtros valem normalmente.</li>
+        <li>A <b>renda líquida simulada</b> divide o patrimônio líquido por 350 (estimativa central), 400 (piso) e 300 (teto). É uma taxa de retirada mensal já descontada de inflação e impostos — cerca de 3,4% ao ano na linha central.</li>
+        <li>Cada linha da aba <code>Patrimônio</code> é um <b>retrato mensal</b>: os mesmos itens se repetem todo mês. Por isso os scorecards mostram o <b>saldo do mês mais recente dentro do período</b>, e não a soma do período — somar os nove meses daria nove vezes o patrimônio real (R$ 5,06 milhões em vez de R$ 564 mil de ativos).</li>
+        <li>O gráfico usa o retrato de cada mês, então a evolução mês a mês está correta.</li>
+        <li><code>Passivos</code> vêm negativos na planilha; o painel mostra o módulo, e o <b>patrimônio líquido</b> é ativos menos esse módulo.</li>
+        <li><code>Patrimônio imóveis</code> soma a categoria <code>Imóveis</code> inteira — o valor do imóvel menos o saldo devedor do financiamento.</li>
+        <li>As movimentações <code>Aporte</code>, <code>Saque</code> e <code>Impostos</code> já estão embutidas nos saldos. Deixá-las no filtro soma um pouquinho duas vezes; para saldos limpos, filtre <code>Saldo</code> ou <code>Valor</code>.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<script>
+  // Os dados vêm do app: a página pai lê a planilha ao vivo e coloca aqui antes de abrir o painel.
+  try { window.FIN = window.parent.__FIN__; } catch (e) { window.FIN = null; }
+</script>
+<script>
+(function () {
+  "use strict";
+  var FIN = window.FIN;
+  var D, TX, TXBYID, MIN_DATE, MAX_DATE, TITULARES, PC;
+  var metaByMonthCat, metaMonthTotal, metaRowsByCat;
+
+  var fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  var fmtBRL0 = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  var fmtInt = new Intl.NumberFormat("pt-BR");
+  function money(v) { return fmtBRL.format(v); }
+  function pct(v) { return (Math.round(v * 10) / 10).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%"; }
+
+  // Tudo que é derivado da planilha fica aqui, para poder ser refeito quando
+  // o botão "Atualizar dados" trouxer uma versão nova.
+  function derivar() {
+    D = FIN.dims;
+
+    TX = FIN.tx.map(function (r) {
+      return {
+        data: r[0],
+        titular: D.titular[r[1]],
+        tipo: D.tipo[r[2]],
+        categoria: r[3] >= 0 ? D.categoria[r[3]] : "(sem categoria)",
+        valor: r[4],
+        conta: r[5] >= 0 ? D.conta[r[5]] : "—",
+        estabelecimento: r[7] >= 0 ? D.estabelecimento[r[7]] : "(sem estabelecimento)",
+        id: r[10],
+        descricao: r[11] || ""
+      };
+    });
+
+    TXBYID = {};
+    TX.forEach(function (t) { TXBYID[String(t.id)] = t; });
+
+    var allDates = TX.map(function (t) { return t.data; }).sort();
+    MIN_DATE = allDates[0]; MAX_DATE = allDates[allDates.length - 1];
+
+    // metaByMonthCat["2026-09|🍔 Alimentação"] = valor  (somado, cobre duplicatas)
+    metaByMonthCat = {}; metaMonthTotal = {}; metaRowsByCat = {};
+    FIN.metas.forEach(function (m) {
+      var ym = m[0].slice(0, 7), cat = m[1], val = m[2] || 0;
+      var k = ym + "|" + cat;
+      metaByMonthCat[k] = (metaByMonthCat[k] || 0) + val;
+      metaMonthTotal[ym] = (metaMonthTotal[ym] || 0) + val;
+      (metaRowsByCat[cat] = metaRowsByCat[cat] || []).push({ ym: ym, meses: m[3] || 0, acum: m[4] || 0 });
+    });
+    Object.keys(metaRowsByCat).forEach(function (c) {
+      metaRowsByCat[c].sort(function (a, b) { return a.ym < b.ym ? -1 : 1; });
+    });
+
+    TITULARES = ["Todos"].concat(D.titular);
+
+    PC = {};
+    FIN.patCols.forEach(function (c, i) { PC[c] = i; });
+  }
+  derivar();
+
+  function monthsInRange(from, to) {
+    var out = [], y = +from.slice(0, 4), m = +from.slice(5, 7);
+    var ey = +to.slice(0, 4), em = +to.slice(5, 7);
+    var guard = 0;
+    while ((y < ey || (y === ey && m <= em)) && guard++ < 600) {
+      out.push(y + "-" + String(m).padStart(2, "0"));
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return out;
+  }
+
+  // Última linha de Metas da categoria com ym <= fim do período.
+  function mediaMensal(cat, endYm) {
+    var rows = metaRowsByCat[cat];
+    if (!rows) return null;
+    var pick = null;
+    for (var i = 0; i < rows.length; i++) { if (rows[i].ym <= endYm) pick = rows[i]; }
+    if (!pick) return null;
+    var meses = pick.meses > 0 ? pick.meses : 1;
+    return -pick.acum / meses;
+  }
+
+  // ---- state -------------------------------------------------------------
+  var today = new Date();
+  function iso(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function monthBounds(d) {
+    return [iso(new Date(d.getFullYear(), d.getMonth(), 1)), iso(new Date(d.getFullYear(), d.getMonth() + 1, 0))];
+  }
+
+  var mb = monthBounds(today);
+  var TODAY_ISO = iso(today);
+  var INICIO_HIST = "2025-12-01";
+  // Limite superior dos inputs: o mes corrente pode terminar depois do ultimo lancamento.
+  var UPPER = [MAX_DATE, TODAY_ISO, mb[1]].sort()[2];
+
+  function novoEstado(panel, from, to) {
+    return {
+      panel: panel, from: from, to: to, titular: "Todos",
+      cats: [], estabs: [], txIds: [],
+      sortKey: "gastos", sortDir: -1,
+      sortCat: { k: "gastos", d: -1 }, sortEst: { k: "gastos", d: -1 },
+      sortTx: { k: "data", d: -1 },
+      chartView: "ambos"
+    };
+  }
+
+  // Cada painel guarda o proprio recorte.
+  var PANELS = {
+    mes: novoEstado("mes", mb[0], mb[1]),
+    hist: novoEstado("hist", INICIO_HIST < MIN_DATE ? MIN_DATE : INICIO_HIST, TODAY_ISO)
+  };
+  var state = PANELS.mes;
+
+
+  // ---- columns -----------------------------------------------------------
+  var COLS = [
+    { k: "key", t: "Categoria", num: false },
+    { k: "qtd", t: "Qtd", num: true },
+    { k: "media", t: "Média mensal", num: true },
+    { k: "ticket", t: "Ticket médio", num: true },
+    { k: "pct", t: "% Gastos", num: true },
+    { k: "gastos", t: "Gastos", num: true },
+    { k: "meta", t: "Meta", num: true },
+    { k: "delta", t: "Δ Valor restante", num: true }
+  ];
+
+  // ---- agregacao ---------------------------------------------------------
+  // Soma com sinal: lancamento positivo (estorno) abate em vez de somar.
+  function aggregate(rows, key) {
+    var m = {};
+    rows.forEach(function (t) {
+      var v = t[key];
+      var o = m[v] || (m[v] = { key: v, qtd: 0, estornos: 0, gastos: 0 });
+      if (t.valor > 0) o.estornos++; else o.qtd++;
+      o.gastos -= t.valor;
+    });
+    var list = Object.keys(m).map(function (k) { return m[k]; });
+    var tot = list.reduce(function (s, o) { return s + o.gastos; }, 0);
+    list.forEach(function (o) {
+      o.ticket = o.qtd ? o.gastos / o.qtd : 0;
+      o.pct = tot ? (o.gastos / tot) * 100 : 0;
+    });
+    return list;
+  }
+
+  // ---- compute -----------------------------------------------------------
+  function compute() {
+    var from = state.from, to = state.to;
+    var base = TX.filter(function (t) {
+      if (t.data < from || t.data > to) return false;
+      if (state.titular !== "Todos" && t.titular !== state.titular) return false;
+      return true;
+    });
+
+    var months = monthsInRange(from, to);
+    var endYm = months[months.length - 1];
+
+    function okCat(t) { return !state.cats.length || state.cats.indexOf(t.categoria) >= 0; }
+    function okEst(t) { return !state.estabs.length || state.estabs.indexOf(t.estabelecimento) >= 0; }
+    function okTx(t) { return !state.txIds.length || state.txIds.indexOf(String(t.id)) >= 0; }
+
+    var gastos = base.filter(function (t) { return t.tipo === "Gastos"; });
+    var rendas = base.filter(function (t) { return t.tipo === "Rendas"; });
+
+    // Cross-filter: cada tabela ignora a propria dimensao e obedece as demais,
+    // para que continue possivel somar valores dentro dela. Os scorecards obedecem a tudo.
+    var gCat = gastos.filter(function (t) { return okEst(t) && okTx(t); });
+    var gEst = gastos.filter(function (t) { return okCat(t) && okTx(t); });
+    var gTx = gastos.filter(function (t) { return okCat(t) && okEst(t); });
+    var gSel = gastos.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+    var rSel = rendas.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+
+    // Saldo: soma crua de TODOS os lancamentos do recorte, qualquer tipo.
+    var allSel = base.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+    var saldo = allSel.reduce(function (s, t) { return s + t.valor; }, 0);
+    var foraGR = allSel.filter(function (t) { return t.tipo !== "Gastos" && t.tipo !== "Rendas"; });
+
+    var totTx = gTx.reduce(function (s, t) { return s - t.valor; }, 0);
+    var totGastos = gSel.reduce(function (s, t) { return s - t.valor; }, 0);
+    var totRendas = rSel.reduce(function (s, t) { return s + t.valor; }, 0);
+    var metaTotal = months.reduce(function (s, ym) {
+      if (!state.cats.length) return s + (metaMonthTotal[ym] || 0);
+      return s + state.cats.reduce(function (a, c) { return a + (metaByMonthCat[ym + "|" + c] || 0); }, 0);
+    }, 0);
+
+    var listCat = aggregate(gCat, "categoria");
+    var listEst = aggregate(gEst, "estabelecimento");
+
+    // Categorias com meta no periodo mas sem gasto ainda aparecem na tabela de metas.
+    var seen = {};
+    listCat.forEach(function (c) { seen[c.key] = 1; });
+    var listMeta = listCat.slice();
+    months.forEach(function (ym) {
+      Object.keys(metaByMonthCat).forEach(function (k) {
+        if (k.slice(0, 7) !== ym) return;
+        var cat = k.slice(8);
+        if (seen[cat]) return;
+        seen[cat] = 1;
+        listMeta.push({ key: cat, qtd: 0, estornos: 0, gastos: 0, ticket: 0, pct: 0 });
+      });
+    });
+    listMeta.forEach(function (c) {
+      c.meta = months.reduce(function (s, ym) { return s + (metaByMonthCat[ym + "|" + c.key] || 0); }, 0);
+      c.delta = c.meta - c.gastos;
+      c.media = mediaMensal(c.key, endYm);
+    });
+
+    var monthly = months.map(function (ym) { return { ym: ym, gastos: 0, rendas: 0 }; });
+    var mIdx = {};
+    monthly.forEach(function (o, i) { mIdx[o.ym] = i; });
+    gSel.forEach(function (t) {
+      var i = mIdx[t.data.slice(0, 7)];
+      if (i !== undefined) monthly[i].gastos -= t.valor;
+    });
+    rSel.forEach(function (t) {
+      var i = mIdx[t.data.slice(0, 7)];
+      if (i !== undefined) monthly[i].rendas += t.valor;
+    });
+
+    return {
+      monthly: monthly, saldo: saldo, nForaGR: foraGR.length,
+      valForaGR: foraGR.reduce(function (s, t) { return s + t.valor; }, 0),
+      txRows: gTx, totTx: totTx,
+      listMeta: listMeta, listCat: listCat, listEst: listEst,
+      totGastos: totGastos, totRendas: totRendas, metaTotal: metaTotal,
+      nGastos: gSel.length, nRendas: rSel.length, months: months,
+      nEstornos: gCat.filter(function (t) { return t.valor > 0; }).length
+    };
+  }
+
+  // ---- cabecalho ordenavel (compartilhado) -------------------------------
+  function sortableHead(elId, cols, st) {
+    var head = document.getElementById(elId);
+    head.innerHTML = cols.map(function (c) {
+      var active = st.k === c.k;
+      return '<th tabindex="0"' + (c.left ? ' class="l"' : "") + ' data-k="' + c.k +
+        '" data-active="' + (active ? 1 : 0) + '" aria-sort="' +
+        (active ? (st.d === -1 ? "descending" : "ascending") : "none") + '">' +
+        c.t + '<span class="arrow">' + (st.d === -1 ? "▼" : "▲") + "</span></th>";
+    }).join("");
+    Array.prototype.forEach.call(head.querySelectorAll("th"), function (th) {
+      function go() {
+        var k = th.dataset.k;
+        if (st.k === k) st.d *= -1; else { st.k = k; st.d = -1; }
+        render();
+      }
+      th.addEventListener("click", go);
+      th.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+      });
+    });
+  }
+
+  // ---- tabela de transacoes ----------------------------------------------
+  var TXCOLS = [
+    { k: "id", t: "ID" },
+    { k: "data", t: "Data" },
+    { k: "conta", t: "Conta", left: true },
+    { k: "categoria", t: "Categoria", left: true },
+    { k: "estabelecimento", t: "Estabelecimento", left: true },
+    { k: "descricao", t: "Descrição", left: true },
+    { k: "pct", t: "%" },
+    { k: "valor", t: "Valor" }
+  ];
+
+  function renderTx(r) {
+    var st = state.sortTx;
+    sortableHead("headTx", TXCOLS, st);
+
+    // % sobre o total da propria tabela, para nao estourar 100% quando ha transacao selecionada.
+    var tot = r.totTx;
+    var rows = r.txRows.map(function (t) {
+      return {
+        id: t.id, data: t.data, conta: t.conta, categoria: t.categoria,
+        estabelecimento: t.estabelecimento, descricao: t.descricao,
+        valor: t.valor, pct: tot ? (-t.valor / tot) * 100 : 0
+      };
+    });
+
+    rows.sort(function (a, b) {
+      var va = a[st.k], vb = b[st.k];
+      if (typeof va === "string" || typeof vb === "string") {
+        return String(va).localeCompare(String(vb), "pt-BR") * st.d;
+      }
+      return (va - vb) * st.d;
+    });
+
+    var tbx = document.getElementById("bodyTx");
+    tbx.className = state.txIds.length ? "has-sel" : "";
+    tbx.innerHTML = rows.length ? rows.map(function (t) {
+      return rowOpen("transacao", String(t.id)) +
+        "<td>" + t.id + "</td>" +
+        "<td>" + br(t.data) + "</td>" +
+        '<td class="l">' + esc(t.conta) + "</td>" +
+        '<td class="l">' + esc(t.categoria) + "</td>" +
+        '<td class="l">' + esc(t.estabelecimento) + "</td>" +
+        '<td class="l desc" title="' + esc(t.descricao) + '">' + esc(t.descricao) + "</td>" +
+        "<td>" + pct(t.pct) + "</td>" +
+        '<td class="gastos' + (t.valor > 0 ? " pos" : "") + '">' + money(t.valor) + "</td>" +
+        "</tr>";
+    }).join("")
+      : '<tr><td colspan="8" style="text-align:center;color:var(--muted)">Nenhuma transação neste recorte.</td></tr>';
+
+    // Com transacoes marcadas, o rodape passa a somar a selecao (e nao a tabela toda).
+    var marcadas = state.txIds.length
+      ? rows.filter(function (t) { return state.txIds.indexOf(String(t.id)) >= 0; })
+      : rows;
+    var soma = marcadas.reduce(function (a, t) { return a + t.valor; }, 0);
+    var somaMag = marcadas.reduce(function (a, t) { return a - t.valor; }, 0);
+    var quantas = state.txIds.length
+      ? fmtInt.format(marcadas.length) + " de " + fmtInt.format(rows.length) + " transações"
+      : fmtInt.format(rows.length) + (rows.length === 1 ? " transação" : " transações");
+
+    document.getElementById("footTx").innerHTML = "<tr>" +
+      "<td>" + (state.txIds.length ? "Selecionado" : "Total") + "</td>" +
+      '<td class="l" colspan="5">' + quantas + "</td>" +
+      "<td>" + pct(tot ? (somaMag / tot) * 100 : 0) + "</td>" +
+      '<td class="gastos' + (soma > 0 ? " pos" : "") + '">' + money(soma) + "</td>" +
+      "</tr>";
+
+    document.getElementById("txHint").textContent =
+      fmtInt.format(rows.length) + (rows.length === 1 ? " lançamento" : " lançamentos") + " de gasto no recorte" +
+      (state.txIds.length ? " · " + state.txIds.length + " selecionada" + (state.txIds.length === 1 ? "" : "s") : "");
+  }
+
+  // ---- render ------------------------------------------------------------
+  function sevClass(v, warnAt, critAt) {
+    if (v >= critAt) return "is-crit";
+    if (v >= warnAt) return "is-warn";
+    return "";
+  }
+
+  function renderCards(r) {
+    var f = activeFilters();
+    var scope = f.length === 0 ? ""
+      : ' <span class="scope">· ' + (f.length === 1 ? esc(f[0].val) : f.length + " filtros") + '</span>';
+    document.getElementById("lblGastos").innerHTML = "Total de gastos" + scope;
+    document.getElementById("lblRendas").innerHTML = "Total de rendas" + scope;
+    document.getElementById("lblRetorno").innerHTML = "Retorno (rendas − gastos)" + scope;
+
+    document.getElementById("kGastos").textContent = money(r.totGastos);
+    var p = r.metaTotal > 0 ? (r.totGastos / r.metaTotal) * 100 : 0;
+    var bar = document.getElementById("barGastos");
+    var sev = sevClass(p, 85, 100);
+    bar.className = "fill " + sev;
+    bar.style.width = Math.min(p, 100) + "%";
+    var pg = document.getElementById("pctGastos");
+    pg.textContent = r.metaTotal > 0 ? pct(p) + " da meta" : "sem meta no período";
+    pg.className = "pct " + (sev || "is-good");
+    document.getElementById("metaGastos").textContent = "meta " + fmtBRL0.format(r.metaTotal);
+
+    document.getElementById("kRendas").textContent = money(r.totRendas);
+    document.getElementById("subRendas").textContent = r.nRendas
+      ? fmtInt.format(r.nRendas) + " lançamento" + (r.nRendas === 1 ? "" : "s") + " de renda no período"
+      : (activeFilters().length ? "sem rendas nesta seleção" : "sem rendas no período");
+
+    var retorno = r.totRendas - r.totGastos;
+    document.getElementById("kRetorno").textContent = money(retorno);
+    var pr = r.totRendas > 0 ? (retorno / r.totRendas) * 100 : 0;
+    var barR = document.getElementById("barRetorno");
+    barR.className = "fill" + (retorno < 0 ? " is-crit" : "");
+    barR.style.width = Math.max(0, Math.min(pr, 100)) + "%";
+    var prEl = document.getElementById("pctRetorno");
+    prEl.textContent = r.totRendas > 0 ? pct(pr) + " das rendas" : "sem rendas no período";
+    prEl.className = "pct " + (retorno < 0 ? "is-crit" : "is-good");
+    document.getElementById("baseRetorno").textContent = "de " + fmtBRL0.format(r.totRendas);
+  }
+
+  function esc(v) {
+    return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  var DIMS = {
+    categoria: { tag: "CAT", sel: function () { return state.cats; } },
+    estabelecimento: { tag: "EST", sel: function () { return state.estabs; } },
+    transacao: {
+      tag: "TRX",
+      sel: function () { return state.txIds; },
+      label: function (id) {
+        var t = TXBYID[id];
+        return "#" + id + (t ? " · " + t.estabelecimento : "");
+      }
+    }
+  };
+
+  // Clique simples troca a seleção DENTRO da dimensão, preservando as outras;
+  // Ctrl/Cmd/Shift soma ou remove sem apagar o resto.
+  function toggleFilter(dim, val, additive) {
+    var arr = DIMS[dim].sel(), i = arr.indexOf(val);
+    if (additive) {
+      if (i >= 0) arr.splice(i, 1); else arr.push(val);
+    } else if (arr.length === 1 && i === 0) {
+      arr.length = 0;
+    } else {
+      arr.length = 0;
+      arr.push(val);
+    }
+    render();
+  }
+
+  function activeFilters() {
+    var out = [];
+    ["categoria", "estabelecimento", "transacao"].forEach(function (dim) {
+      DIMS[dim].sel().forEach(function (v) {
+        var lab = DIMS[dim].label ? DIMS[dim].label(v) : v;
+        out.push({ dim: dim, val: v, label: lab });
+      });
+    });
+    return out;
+  }
+
+  function clearFiltros() {
+    if (!activeFilters().length) return;
+    state.cats.length = 0;
+    state.estabs.length = 0;
+    state.txIds.length = 0;
+    render();
+  }
+
+  function qtdTitle(c) {
+    var t = fmtInt.format(c.qtd) + (c.qtd === 1 ? " saída" : " saídas");
+    if (c.estornos) t += " · " + c.estornos + (c.estornos === 1 ? " estorno abatido" : " estornos abatidos");
+    return t;
+  }
+
+  function deltaChip(v) {
+    var cls, glyph;
+    if (v < 0) { cls = "is-crit"; glyph = "✕"; }
+    else if (v <= 200) { cls = "is-warn"; glyph = "!"; }
+    else { cls = "is-good"; glyph = "✓"; }
+    return '<span class="chip ' + cls + '"><span class="g">' + glyph + "</span>" + money(v) + "</span>";
+  }
+
+  function renderHead() {
+    var tr = document.getElementById("thead-row");
+    tr.innerHTML = COLS.map(function (c) {
+      var active = state.sortKey === c.k;
+      var arrow = state.sortDir === -1 ? "▼" : "▲";
+      return '<th tabindex="0" data-k="' + c.k + '" data-active="' + (active ? 1 : 0) + '" ' +
+        'aria-sort="' + (active ? (state.sortDir === -1 ? "descending" : "ascending") : "none") + '">' +
+        c.t + '<span class="arrow">' + arrow + "</span></th>";
+    }).join("");
+    Array.prototype.forEach.call(tr.querySelectorAll("th"), function (th) {
+      function go() {
+        var k = th.dataset.k;
+        if (state.sortKey === k) state.sortDir *= -1;
+        else { state.sortKey = k; state.sortDir = k === "categoria" ? 1 : -1; }
+        render();
+      }
+      th.addEventListener("click", go);
+      th.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+      });
+    });
+  }
+
+  function renderTable(r) {
+    var list = r.listMeta.slice();
+    var k = state.sortKey, dir = state.sortDir;
+    list.sort(function (a, b) {
+      var va = a[k], vb = b[k];
+      if (k === "key") return va.localeCompare(vb, "pt-BR") * dir;
+      va = va === null ? -Infinity : va; vb = vb === null ? -Infinity : vb;
+      return (va - vb) * dir;
+    });
+
+    var empty = document.getElementById("emptyState");
+    var shell = document.querySelector(".table-shell");
+    if (!list.length) {
+      empty.hidden = false; shell.hidden = true;
+      document.getElementById("tblHint").textContent = "";
+      return;
+    }
+    empty.hidden = true; shell.hidden = false;
+
+    var tb = document.getElementById("tbody");
+    tb.className = state.cats.length ? "has-sel" : "";
+    tb.innerHTML = list.map(function (c) {
+      return rowOpen("categoria", c.key) +
+        "<td>" + esc(c.key) + "</td>" +
+        '<td class="qtd" title="' + qtdTitle(c) + '">' + fmtInt.format(c.qtd) + (c.estornos ? '<span class="est">·' + c.estornos + "</span>" : "") + "</td>" +
+        "<td>" + (c.media === null ? "—" : money(c.media)) + "</td>" +
+        "<td>" + (c.qtd ? money(c.ticket) : "—") + "</td>" +
+        "<td>" + pct(c.pct) + "</td>" +
+        '<td class="gastos">' + money(c.gastos) + "</td>" +
+        "<td>" + money(c.meta) + "</td>" +
+        "<td>" + deltaChip(c.delta) + "</td>" +
+        "</tr>";
+    }).join("");
+
+    var tQtd = list.reduce(function (s, c) { return s + c.qtd; }, 0);
+    var tEst = list.reduce(function (s, c) { return s + c.estornos; }, 0);
+    var tGas = list.reduce(function (s, c) { return s + c.gastos; }, 0);
+    var tMeta = list.reduce(function (s, c) { return s + c.meta; }, 0);
+    var tMedia = list.reduce(function (s, c) { return s + (c.media || 0); }, 0);
+
+    document.getElementById("tfoot").innerHTML = "<tr>" +
+      "<td>Total</td>" +
+      '<td class="qtd" title="' + qtdTitle({ qtd: tQtd, estornos: tEst }) + '">' + fmtInt.format(tQtd) + (tEst ? '<span class="est">·' + tEst + "</span>" : "") + "</td>" +
+      "<td>" + money(tMedia) + "</td>" +
+      "<td>" + (tQtd ? money(tGas / tQtd) : "—") + "</td>" +
+      "<td>" + pct(tGas ? 100 : 0) + "</td>" +
+      '<td class="gastos">' + money(tGas) + "</td>" +
+      "<td>" + money(tMeta) + "</td>" +
+      "<td>" + deltaChip(tMeta - tGas) + "</td>" +
+      "</tr>";
+
+    var nm = r.months.length;
+    document.getElementById("tblHint").textContent =
+      list.length + " categorias · " + nm + (nm === 1 ? " mês de meta" : " meses de meta somados") +
+      (r.nEstornos ? " · " + r.nEstornos + (r.nEstornos === 1 ? " estorno abatido" : " estornos abatidos") : "");
+  }
+
+  function renderXFilter() {
+    var bar = document.getElementById("xfilter");
+    var f = activeFilters();
+    if (!f.length) {
+      bar.hidden = true;
+      document.getElementById("xchips").innerHTML = "";
+      return;
+    }
+    bar.hidden = false;
+    document.getElementById("xchips").innerHTML = f.map(function (o) {
+      return '<button type="button" class="xchip" data-dim="' + o.dim + '" data-val="' + esc(o.val) +
+        '" aria-label="Remover ' + esc(o.label) + ' do filtro">' +
+        '<span class="dim">' + DIMS[o.dim].tag + "</span>" + esc(o.label) +
+        '<span class="x" aria-hidden="true">×</span></button>';
+    }).join("");
+    document.getElementById("xclear").hidden = f.length < 2;
+  }
+
+  // ---- tabelas Categoria & Estabelecimento -------------------------------
+  var MINI = [
+    { k: "key", t: "", num: false },
+    { k: "qtd", t: "Qtd", num: true },
+    { k: "ticket", t: "Ticket médio", num: true },
+    { k: "pct", t: "%", num: true },
+    { k: "gastos", t: "Gastos", num: true }
+  ];
+
+  function rowOpen(dim, val) {
+    var on = DIMS[dim].sel().indexOf(val) >= 0;
+    return '<tr tabindex="0" role="button" aria-pressed="' + on + '" class="' + (on ? "sel" : "") +
+      '" data-dim="' + dim + '" data-val="' + esc(val) + '" title="' +
+      (on ? "Clique para tirar do filtro · Ctrl+clique mantém as outras"
+          : "Clique para filtrar · Ctrl+clique soma à seleção") + '">';
+  }
+
+  function renderMini(cfg, list) {
+    var st = cfg.sort;
+    var head = document.getElementById(cfg.head);
+    head.innerHTML = MINI.map(function (c) {
+      var active = st.k === c.k;
+      return '<th tabindex="0" data-k="' + c.k + '" data-active="' + (active ? 1 : 0) + '" ' +
+        'aria-sort="' + (active ? (st.d === -1 ? "descending" : "ascending") : "none") + '">' +
+        (c.k === "key" ? cfg.title : c.t) +
+        '<span class="arrow">' + (st.d === -1 ? "▼" : "▲") + "</span></th>";
+    }).join("");
+    Array.prototype.forEach.call(head.querySelectorAll("th"), function (th) {
+      function go() {
+        var k = th.dataset.k;
+        if (st.k === k) st.d *= -1; else { st.k = k; st.d = k === "key" ? 1 : -1; }
+        render();
+      }
+      th.addEventListener("click", go);
+      th.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+      });
+    });
+
+    var rows = list.slice().sort(function (a, b) {
+      if (st.k === "key") return a.key.localeCompare(b.key, "pt-BR") * st.d;
+      return (a[st.k] - b[st.k]) * st.d;
+    });
+
+    var tb = document.getElementById(cfg.body);
+    tb.className = DIMS[cfg.dim].sel().length ? "has-sel" : "";
+    tb.innerHTML = rows.length ? rows.map(function (c) {
+      return rowOpen(cfg.dim, c.key) +
+        "<td>" + esc(c.key) + "</td>" +
+        '<td class="qtd" title="' + qtdTitle(c) + '">' + fmtInt.format(c.qtd) +
+          (c.estornos ? '<span class="est">·' + c.estornos + "</span>" : "") + "</td>" +
+        "<td>" + (c.qtd ? money(c.ticket) : "—") + "</td>" +
+        "<td>" + pct(c.pct) + "</td>" +
+        '<td class="gastos">' + money(c.gastos) + "</td>" +
+        "</tr>";
+    }).join("")
+      : '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nada neste recorte.</td></tr>';
+
+    var tQtd = rows.reduce(function (s, c) { return s + c.qtd; }, 0);
+    var tEst = rows.reduce(function (s, c) { return s + c.estornos; }, 0);
+    var tGas = rows.reduce(function (s, c) { return s + c.gastos; }, 0);
+    document.getElementById(cfg.foot).innerHTML = "<tr>" +
+      "<td>Total · " + fmtInt.format(rows.length) + "</td>" +
+      '<td class="qtd" title="' + qtdTitle({ qtd: tQtd, estornos: tEst }) + '">' + fmtInt.format(tQtd) +
+        (tEst ? '<span class="est">·' + tEst + "</span>" : "") + "</td>" +
+      "<td>" + (tQtd ? money(tGas / tQtd) : "—") + "</td>" +
+      "<td>" + pct(tGas ? 100 : 0) + "</td>" +
+      '<td class="gastos">' + money(tGas) + "</td>" +
+      "</tr>";
+  }
+
+  var MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  function rotuloMes(ym) { return MESES[+ym.slice(5, 7) - 1] + "/" + ym.slice(2, 4); }
+  function mil(v) {
+    if (v === 0) return "R$ 0";
+    if (Math.abs(v) >= 1000) return "R$ " + (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil";
+    return "R$ " + v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  }
+  function tetoBonito(v) {
+    if (v <= 0) return 1;
+    var mag = Math.pow(10, Math.floor(Math.log10(v))), n = v / mag;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 4 ? 4 : n <= 5 ? 5 : n <= 8 ? 8 : 10) * mag;
+  }
+  // Barra ancorada no zero: canto arredondado sempre na ponta livre.
+  function barra(x, y, w, h, fill, paraCima) {
+    if (h <= 0.5) return "";
+    var r = Math.min(4, w / 2, h);
+    if (paraCima) {
+      return '<path class="barmark" fill="' + fill + '" d="M' + x + ' ' + (y + h) +
+        ' V' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y +
+        ' H' + (x + w - r) + ' Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) +
+        ' V' + (y + h) + ' Z"/>';
+    }
+    return '<path class="barmark" fill="' + fill + '" d="M' + x + ' ' + y +
+      ' V' + (y + h - r) + ' Q' + x + ' ' + (y + h) + ' ' + (x + r) + ' ' + (y + h) +
+      ' H' + (x + w - r) + ' Q' + (x + w) + ' ' + (y + h) + ' ' + (x + w) + ' ' + (y + h - r) +
+      ' V' + y + ' Z"/>';
+  }
+
+  var VISOES = {
+    ambos: {
+      titulo: "Rendas e Gastos por Mês",
+      series: [
+        { nome: "Gastos", cor: "var(--gastos)", val: function (d) { return d.gastos; } },
+        { nome: "Rendas", cor: "var(--rendas)", val: function (d) { return d.rendas; } }
+      ],
+      tooltip: function (d) { return linhasFin(d); }
+    },
+    retorno: {
+      titulo: "Retorno por Mês",
+      legenda: [
+        { nome: "Retorno positivo", cor: "var(--rendas)" },
+        { nome: "Retorno negativo", cor: "var(--gastos)" }
+      ],
+      series: [
+        {
+          nome: "Retorno", cor: "var(--rendas)",
+          corDe: function (v) { return v < 0 ? "var(--gastos)" : "var(--rendas)"; },
+          val: function (d) { return d.rendas - d.gastos; }
+        }
+      ],
+      tooltip: function (d) { return linhasFin(d); }
+    }
+  };
+
+  var VISOES_PAT = {
+    ambos: {
+      titulo: "Performance Patrimônio por Mês", casas: 0,
+      series: [
+        { nome: "Ativos", cor: "var(--rendas)", val: function (d) { return d.ativos; } },
+        { nome: "Passivos", cor: "var(--gastos)", val: function (d) { return d.passivos; } }
+      ],
+      tooltip: function (d) { return linhasPat(d); }
+    },
+    pl: {
+      titulo: "Patrimônio Líquido por Mês", casas: 0,
+      series: [
+        { nome: "Patrimônio líquido", cor: "var(--pl)", val: function (d) { return d.ativos - d.passivos; } }
+      ],
+      tooltip: function (d) { return linhasPat(d); }
+    }
+  };
+
+  function linha(cor, rot, val, tint) {
+    return '<div class="r"><i style="background:' + cor + '"></i>' + rot +
+      "<b" + (tint ? ' style="color:' + tint + '"' : "") + ">" + money(val) + "</b></div>";
+  }
+  function linhasFin(d) {
+    var ret = d.rendas - d.gastos;
+    return linha("var(--gastos)", "Gastos", d.gastos) +
+      linha("var(--rendas)", "Rendas", d.rendas) +
+      '<div class="sep"></div>' +
+      linha(ret < 0 ? "var(--gastos)" : "var(--rendas)", "Retorno", ret,
+        ret < 0 ? "var(--gastos-ink)" : "var(--rendas-ink)");
+  }
+  function linhasPat(d) {
+    var pl = d.ativos - d.passivos;
+    return linha("var(--rendas)", "Ativos", d.ativos) +
+      linha("var(--gastos)", "Passivos", d.passivos) +
+      '<div class="sep"></div>' +
+      linha("var(--pl)", "Patrimônio líquido", pl);
+  }
+
+  // Um só motor de gráfico para os dois painéis: muda o alvo no DOM e a visão.
+  function desenhaGrafico(ids, dados, visao) {
+    var series = visao.series;
+    var host = document.getElementById(ids.host);
+
+    document.getElementById(ids.titulo).textContent = visao.titulo;
+    document.getElementById(ids.legenda).innerHTML = (visao.legenda || series).map(function (se) {
+      return '<span><i style="background:' + se.cor + '"></i>' + se.nome + "</span>";
+    }).join("");
+
+    if (!dados.length) {
+      host.innerHTML = '<p class="empty">Sem meses no recorte.</p>';
+      document.getElementById(ids.hint).textContent = "";
+      return;
+    }
+
+    var ML = 92, MR = 16, MT = 22, MB = 42, H = 289;
+    var BASE_W = 960, G_MIN = 66;
+    var n = dados.length;
+    var dispW = BASE_W - ML - MR;
+
+    var grupoW, W;
+    if (n * G_MIN > dispW) { grupoW = G_MIN; W = ML + MR + n * grupoW; }
+    else { grupoW = dispW / n; W = BASE_W; }
+
+    var plotW = W - ML - MR, plotH = H - MT - MB, fundo = MT + plotH;
+    var startX = Math.max(ML, (W - n * grupoW) / 2);
+
+    var vmax = -Infinity, vmin = Infinity;
+    dados.forEach(function (d) {
+      series.forEach(function (se) {
+        var v = se.val(d);
+        if (v > vmax) vmax = v;
+        if (v < vmin) vmin = v;
+      });
+    });
+    if (!isFinite(vmax)) { vmax = 0; vmin = 0; }
+    var span = Math.max(vmax, 0) - Math.min(vmin, 0);
+    var passo = (tetoBonito(span) || 1) / 4;
+    var yTop = Math.max(Math.ceil(vmax / passo) * passo, passo);
+    var yBot = Math.min(0, Math.floor(vmin / passo) * passo);
+    var faixa = yTop - yBot || 1;
+    var yOf = function (v) { return MT + plotH * (yTop - v) / faixa; };
+    var zeroY = yOf(0);
+
+    var svg = ['<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="' +
+      (W > BASE_W ? "width:" + W + "px" : "width:100%") +
+      ';height:auto" role="img" aria-label="' + visao.titulo + '">'];
+
+    for (var v = yBot; v <= yTop + 0.001; v += passo) {
+      var y = yOf(v);
+      svg.push('<line class="' + (Math.abs(v) < 0.001 ? "chart-axis" : "chart-grid") +
+        '" x1="' + ML + '" y1="' + y + '" x2="' + (W - MR) + '" y2="' + y + '"/>');
+      svg.push('<text class="chart-tick" x="' + (ML - 9) + '" y="' + (y + 3.5) +
+        '" text-anchor="end">' + mil(v) + "</text>");
+    }
+
+    var k = series.length, GAP = 4, BW_MAX = 96;
+    var bw = Math.max(6, Math.min(BW_MAX, (grupoW * 0.88 - GAP * (k - 1)) / k));
+
+    var casas = visao.casas === undefined ? 1 : visao.casas;
+    var emMilhares = yTop >= 1000 || Math.abs(yBot) >= 1000;
+    function formatos(val) {
+      if (!emMilhares) {
+        var n0 = val.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+        return ["R$ " + n0, n0];
+      }
+      var nm = (val / 1000).toLocaleString("pt-BR",
+        { minimumFractionDigits: casas, maximumFractionDigits: casas });
+      return ["R$ " + nm + " mil", nm + " mil", "R$ " + nm, nm];
+    }
+
+    var CH = 0.6, FS_MIN = 7.5, FS_MAX = 13;
+    var permitido = (k > 1 ? bw + GAP : grupoW) - 3;
+    var nForm = formatos(0).length, iForm = nForm - 1, fs = FS_MIN;
+    for (var f = 0; f < nForm; f++) {
+      var maior = 0;
+      dados.forEach(function (d) {
+        series.forEach(function (se) { maior = Math.max(maior, formatos(se.val(d))[f].length); });
+      });
+      var cand = Math.min(FS_MAX, permitido / (maior * CH));
+      if (cand >= FS_MIN || f === nForm - 1) { iForm = f; fs = Math.max(FS_MIN, cand); break; }
+    }
+    function rotuloValor(val) { return formatos(val)[iForm]; }
+
+    dados.forEach(function (d, i) {
+      var cx = startX + grupoW * i + grupoW / 2;
+      var largura = k * bw + (k - 1) * GAP;
+      series.forEach(function (se, j) {
+        var val = se.val(d);
+        var x = cx - largura / 2 + j * (bw + GAP);
+        var yv = yOf(val), alt = Math.abs(zeroY - yv);
+        var paraCima = val >= 0;
+        svg.push(barra(x, paraCima ? yv : zeroY, bw, alt, se.corDe ? se.corDe(val) : se.cor, paraCima));
+
+        var dentro = alt >= fs + 10;
+        var ty = paraCima
+          ? (dentro ? yv + fs + 4 : yv - 5)
+          : (dentro ? yv - 6 : yv + fs + 4);
+        svg.push('<text class="chart-val ' + (dentro ? "dentro" : "fora") + '" x="' + (x + bw / 2).toFixed(1) +
+          '" y="' + ty.toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle">' +
+          rotuloValor(val) + "</text>");
+      });
+      svg.push('<text class="chart-xlab" x="' + cx + '" y="' + (fundo + 18) +
+        '" text-anchor="middle">' + rotuloMes(d.ym) + "</text>");
+      svg.push('<rect class="chart-hit" data-i="' + i + '" x="' + (startX + grupoW * i) +
+        '" y="' + MT + '" width="' + grupoW + '" height="' + plotH + '"/>');
+    });
+    svg.push("</svg>");
+    host.innerHTML = svg.join("");
+
+    var tip = document.getElementById(ids.tip);
+    var svgEl = host.querySelector("svg");
+    Array.prototype.forEach.call(host.querySelectorAll(".chart-hit"), function (hit) {
+      hit.addEventListener("mouseenter", function () {
+        var d = dados[+hit.dataset.i];
+        tip.innerHTML = '<span class="m">' + rotuloMes(d.ym) + "</span>" + visao.tooltip(d);
+        tip.hidden = false;
+        var box = svgEl.getBoundingClientRect();
+        var caixa = tip.offsetParent.getBoundingClientRect();
+        var escalaX = box.width / W;
+        var cx = box.left - caixa.left + (startX + grupoW * (+hit.dataset.i) + grupoW / 2) * escalaX;
+        tip.style.left = Math.max(4, Math.min(cx - tip.offsetWidth / 2, caixa.width - tip.offsetWidth - 4)) + "px";
+        tip.style.top = (box.top - caixa.top + 8) + "px";
+      });
+      hit.addEventListener("mouseleave", function () { tip.hidden = true; });
+    });
+
+    document.getElementById(ids.hint).textContent =
+      n + (n === 1 ? " mês" : " meses") +
+      (yBot < 0 ? " · zero no meio da escala" : " · escala até " + mil(yTop));
+  }
+
+  var VISOES_REND = {
+    abs: {
+      titulo: "Rendimento por Mês", formato: "moeda", casas: 1, dados: "serie",
+      linhas: [{ nome: "Rendimento", cor: "var(--accent)", val: function (d) { return d.rend; } }],
+      tooltip: tipRend
+    },
+    pct: {
+      titulo: "Rendimento Percentual por Mês", formato: "pct", casas: 2, dados: "serie",
+      linhas: [{ nome: "% sobre o saldo do mês anterior", cor: "var(--accent)",
+                 val: function (d) { return d.pct; } }],
+      tooltip: tipRend
+    },
+    sobre: {
+      titulo: "Rendimento sobre o Patrimônio", formato: "pct", casas: 3, dados: "serie",
+      linhas: [{ nome: "% sobre o patrimônio líquido", cor: "var(--accent)",
+                 val: function (d) { return d.pctPl; } }],
+      tooltip: tipRend
+    },
+    sim: {
+      titulo: "Renda Líquida Simulada", formato: "moeda", casas: 0, dados: "pl",
+      banda: { cor: "var(--pl)", nome: "Faixa (÷400 a ÷300)",
+               alta: function (d) { return d.pl / 300; },
+               baixa: function (d) { return d.pl / 400; } },
+      linhas: [{ nome: "Estimativa central (÷350)", cor: "var(--pl)",
+                 val: function (d) { return d.pl / 350; } }],
+      tooltip: tipSim
+    },
+    covGastos: {
+      titulo: "Renda Simulada sobre os Gastos", formato: "pct", casas: 1, dados: "pl",
+      linhas: [{ nome: "Quanto a renda simulada cobre dos gastos do mês", cor: "var(--gastos)",
+                 val: function (d) { return d.gastos ? (d.pl / 350) / d.gastos * 100 : 0; } }],
+      tooltip: tipCob
+    },
+    covRendas: {
+      titulo: "Renda Simulada sobre as Rendas", formato: "pct", casas: 1, dados: "pl",
+      linhas: [{ nome: "Quanto a renda simulada representa das rendas do mês", cor: "var(--rendas)",
+                 val: function (d) { return d.rendas ? (d.pl / 350) / d.rendas * 100 : 0; } }],
+      tooltip: tipCob
+    }
+  };
+
+  function tipRend(d) {
+    return linha("var(--accent)", "Rendimento", d.rend,
+        d.rend < 0 ? "var(--gastos-ink)" : "var(--rendas-ink)") +
+      '<div class="r">% sobre o saldo<b>' + pctN(d.pct, 2) + "</b></div>" +
+      '<div class="r">% sobre o patrimônio<b>' + pctN(d.pctPl, 3) + "</b></div>" +
+      '<div class="sep"></div>' +
+      '<div class="r">Saldo anterior<b>' + money(d.base) + "</b></div>" +
+      '<div class="r">Saldo do mês<b>' + money(d.saldo) + "</b></div>" +
+      '<div class="r">Movimentações<b>' + money(d.movs) + "</b></div>" +
+      (d.alug ? '<div class="r">Aluguéis<b style="color:var(--rendas-ink)">+' + money(d.alug) + "</b></div>" : "");
+  }
+  function tipSim(d) {
+    return '<div class="r">Patrimônio líquido<b>' + money(d.pl) + "</b></div>" +
+      '<div class="sep"></div>' +
+      '<div class="r">Piso (÷400)<b>' + money(d.pl / 400) + "</b></div>" +
+      linha("var(--pl)", "Central (÷350)", d.pl / 350) +
+      '<div class="r">Teto (÷300)<b>' + money(d.pl / 300) + "</b></div>";
+  }
+
+  function tipCob(d) {
+    var est = d.pl / 350;
+    return linha("var(--pl)", "Renda simulada", est) +
+      '<div class="sep"></div>' +
+      linha("var(--gastos)", "Gastos do mês", d.gastos) +
+      '<div class="r">cobre<b>' + (d.gastos ? pctN(est / d.gastos * 100, 1) : "—") + "</b></div>" +
+      linha("var(--rendas)", "Rendas do mês", d.rendas) +
+      '<div class="r">equivale a<b>' + (d.rendas ? pctN(est / d.rendas * 100, 1) : "—") + "</b></div>";
+  }
+
+  function pctN(v, casas) {
+    return v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas }) + "%";
+  }
+
+  // Catmull-Rom convertido em Bézier cúbica: curva suave passando pelos pontos.
+  function caminhoSuave(pts) {
+    if (!pts.length) return "";
+    if (pts.length === 1) return "M" + pts[0][0] + " " + pts[0][1];
+    var d = "M" + pts[0][0].toFixed(1) + " " + pts[0][1].toFixed(1);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      d += " C" + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + " " + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1) +
+           "," + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + " " + (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1) +
+           "," + p2[0].toFixed(1) + " " + p2[1].toFixed(1);
+    }
+    return d;
+  }
+
+  function desenhaLinhas(ids, dados, visao) {
+    var host = document.getElementById(ids.host);
+    document.getElementById(ids.titulo).textContent = visao.titulo;
+
+    var legenda = visao.linhas.map(function (l) {
+      return '<span><i style="background:' + l.cor + '"></i>' + l.nome + "</span>";
+    });
+    if (visao.banda) {
+      legenda.push('<span><i class="faixa" style="background:' + visao.banda.cor + '"></i>' +
+        visao.banda.nome + "</span>");
+    }
+    document.getElementById(ids.legenda).innerHTML = legenda.join("");
+
+    if (dados.length < 2) {
+      host.innerHTML = '<p class="empty">Precisa de pelo menos dois meses no recorte.</p>';
+      document.getElementById(ids.hint).textContent = "";
+      return;
+    }
+
+    var ML = 92, MR = 26, MT = 26, MB = 42, H = 289;
+    var BASE_W = 960, n = dados.length;
+    var W = Math.max(BASE_W, ML + MR + n * 66);
+    var plotW = W - ML - MR, plotH = H - MT - MB, fundo = MT + plotH;
+
+    var vals = [];
+    dados.forEach(function (d) {
+      visao.linhas.forEach(function (l) { vals.push(l.val(d)); });
+      if (visao.banda) { vals.push(visao.banda.alta(d)); vals.push(visao.banda.baixa(d)); }
+    });
+    var vmax = Math.max.apply(null, vals), vmin = Math.min.apply(null, vals);
+    var cruzaZero = vmin < 0 && vmax > 0;
+    var alto = cruzaZero ? Math.max(vmax, 0) : vmax;
+    var baixo = cruzaZero ? Math.min(vmin, 0) : vmin;
+    var folga = ((alto - baixo) || Math.abs(alto) || 1) * 0.12;
+    alto += folga;
+    baixo -= folga;
+    if (!cruzaZero && vmin >= 0 && baixo < 0) baixo = 0;
+
+    var passo = (tetoBonito(alto - baixo) || 1) / 4;
+    var yTop = Math.ceil(alto / passo) * passo;
+    var yBot = Math.floor(baixo / passo) * passo;
+    if (yTop <= yBot) yTop = yBot + passo;
+    var faixa = yTop - yBot || 1;
+    var yOf = function (v) { return MT + plotH * (yTop - v) / faixa; };
+    var recuo = Math.min(38, plotW / (n * 2));
+    var util = plotW - recuo * 2;
+    var xOf = function (i) { return ML + recuo + (n === 1 ? util / 2 : util * i / (n - 1)); };
+
+    // Abaixo de dez mil o valor cheio cabe e é mais preciso que "R$ 1,4 mil".
+    var pequeno = Math.abs(yTop) < 10000 && Math.abs(yBot) < 10000;
+    function rotulo(v) {
+      if (visao.formato === "pct") return pctN(v, visao.casas);
+      return pequeno ? fmtBRL0.format(v) : mil(v);
+    }
+
+    var svg = ['<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="' +
+      (W > BASE_W ? "width:" + W + "px" : "width:100%") +
+      ';height:auto" role="img" aria-label="' + visao.titulo + '">'];
+
+    for (var v = yBot; v <= yTop + 1e-9; v += passo) {
+      var y = yOf(v);
+      svg.push('<line class="' + (Math.abs(v) < 1e-9 ? "chart-axis" : "chart-grid") +
+        '" x1="' + ML + '" y1="' + y.toFixed(1) + '" x2="' + (W - MR) + '" y2="' + y.toFixed(1) + '"/>');
+      svg.push('<text class="chart-tick" x="' + (ML - 9) + '" y="' + (y + 3.5).toFixed(1) +
+        '" text-anchor="end">' + rotulo(v) + "</text>");
+    }
+
+    if (visao.banda) {
+      var alta = dados.map(function (d, i) { return [xOf(i), yOf(visao.banda.alta(d))]; });
+      var baixa = dados.map(function (d, i) { return [xOf(i), yOf(visao.banda.baixa(d))]; });
+      var volta = caminhoSuave(baixa.slice().reverse());
+      svg.push('<path class="banda-mark" fill="' + visao.banda.cor + '" fill-opacity="0.16" d="' +
+        caminhoSuave(alta) + " L" + volta.slice(1) + ' Z"/>');
+      svg.push('<path class="linha-mark" stroke="' + visao.banda.cor + '" stroke-opacity="0.45" d="' +
+        caminhoSuave(alta) + '"/>');
+      svg.push('<path class="linha-mark" stroke="' + visao.banda.cor + '" stroke-opacity="0.45" d="' +
+        caminhoSuave(baixa) + '"/>');
+    }
+
+    visao.linhas.forEach(function (l) {
+      var pts = dados.map(function (d, i) { return [xOf(i), yOf(l.val(d))]; });
+      svg.push('<path class="linha-mark" stroke="' + l.cor + '" d="' + caminhoSuave(pts) + '"/>');
+      pts.forEach(function (pt) {
+        svg.push('<circle class="ponto-mark" cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) +
+          '" r="4" fill="' + l.cor + '"/>');
+      });
+    });
+
+    var principal = visao.linhas[0];
+    dados.forEach(function (d, i) {
+      var x = xOf(i), y = yOf(principal.val(d));
+      var ty = Math.max(MT + 9, y - 11);
+      svg.push('<text class="chart-val fora" x="' + x.toFixed(1) + '" y="' + ty.toFixed(1) +
+        '" font-size="9.5" text-anchor="middle">' + rotulo(principal.val(d)) + "</text>");
+      svg.push('<text class="chart-xlab" x="' + x.toFixed(1) + '" y="' + (fundo + 18) +
+        '" text-anchor="middle">' + rotuloMes(d.ym) + "</text>");
+      var faixaHit = plotW / n;
+      svg.push('<rect class="chart-hit" data-i="' + i + '" x="' + (x - faixaHit / 2).toFixed(1) +
+        '" y="' + MT + '" width="' + faixaHit.toFixed(1) + '" height="' + plotH + '"/>');
+    });
+    svg.push("</svg>");
+    host.innerHTML = svg.join("");
+
+    var tip = document.getElementById(ids.tip);
+    var svgEl = host.querySelector("svg");
+    Array.prototype.forEach.call(host.querySelectorAll(".chart-hit"), function (hit) {
+      hit.addEventListener("mouseenter", function () {
+        var d = dados[+hit.dataset.i];
+        tip.innerHTML = '<span class="m">' + rotuloMes(d.ym) + "</span>" + visao.tooltip(d);
+        tip.hidden = false;
+        var box = svgEl.getBoundingClientRect();
+        var caixa = tip.offsetParent.getBoundingClientRect();
+        var cx = box.left - caixa.left + xOf(+hit.dataset.i) * (box.width / W);
+        tip.style.left = Math.max(4, Math.min(cx - tip.offsetWidth / 2, caixa.width - tip.offsetWidth - 4)) + "px";
+        tip.style.top = (box.top - caixa.top + 8) + "px";
+      });
+      hit.addEventListener("mouseleave", function () { tip.hidden = true; });
+    });
+
+    document.getElementById(ids.hint).textContent =
+      n + (n === 1 ? " mês" : " meses") + (yBot < 0 ? " · zero no meio da escala" : "");
+  }
+
+  var IDS_REND = { host: "rendScroll", titulo: "rendTitle", legenda: "rendLegend",
+                   hint: "rendHint", tip: "rendTip" };
+
+  var IDS_FIN = { host: "chartScroll", titulo: "chartTitle", legenda: "chartLegend",
+                  hint: "chartHint", tip: "chartTip" };
+  var IDS_PAT = { host: "patChartScroll", titulo: "patChartTitle", legenda: "patChartLegend",
+                  hint: "patChartHint", tip: "patChartTip" };
+
+  function renderChart(r) {
+    desenhaGrafico(IDS_FIN, r.monthly, VISOES[state.chartView] || VISOES.ambos);
+  }
+
+  // ---- Patrimônio ---------------------------------------------------------
+  var PAT = {
+    // Os retratos de patrimônio são datados no fim do mês, então o limite vai
+    // até o fim do mês corrente: parar em "hoje" esconderia o mês vigente.
+    from: INICIO_HIST, to: mb[1],
+    cats: [], movs: ["Saldo", "Valor"], descs: [], titular: "Todos",
+    chartView: "ambos", rendView: "abs"
+  };
+
+  function valoresDe(col) {
+    var vis = {}, out = [];
+    FIN.patrimonio.forEach(function (r) {
+      if (r[col] && !vis[r[col]]) { vis[r[col]] = 1; out.push(r[col]); }
+    });
+    return out.sort();
+  }
+
+  // Aluguel é renda do imóvel: não está embutido em nenhum saldo, então entra
+  // inteiro no rendimento e nunca no retrato de ativos.
+  function ehAluguel(m) { return /^alugu/i.test(m || ""); }
+
+  function computePat() {
+    var linhas = FIN.patrimonio.filter(function (r) {
+      if (r[PC.data] < PAT.from || r[PC.data] > PAT.to) return false;
+      if (PAT.cats.length && PAT.cats.indexOf(r[PC.categoria]) < 0) return false;
+      if (PAT.movs.length && PAT.movs.indexOf(r[PC.movimentacao]) < 0) return false;
+      if (PAT.descs.length && PAT.descs.indexOf(r[PC.descricao]) < 0) return false;
+      if (PAT.titular !== "Todos" && r[PC.investidor] !== PAT.titular) return false;
+      return true;
+    });
+
+    // Cada mês é um retrato do patrimônio, então agregamos POR mês e o número
+    // do painel é o retrato mais recente — somar os meses multiplicaria tudo.
+    var porMes = {};
+    linhas.forEach(function (r) {
+      if (ehAluguel(r[PC.movimentacao])) return;
+      var ym = r[PC.data].slice(0, 7);
+      var o = porMes[ym] || (porMes[ym] = { ym: ym, ativos: 0, passivos: 0, inv: 0, imo: 0, n: 0 });
+      o.n++;
+      if (r[PC.tipo] === "Passivo") o.passivos -= r[PC.valor];   // vem negativo na planilha
+      else o.ativos += r[PC.valor];
+      var cat = r[PC.categoria];
+      if (cat === "Investimentos" || cat === "Criptomoedas") o.inv += r[PC.valor];
+      else if (cat === "Imóveis") o.imo += r[PC.valor];
+    });
+
+    var meses = Object.keys(porMes).sort().map(function (k) { return porMes[k]; });
+    var ultimo = meses.length ? meses[meses.length - 1]
+      : { ym: null, ativos: 0, passivos: 0, inv: 0, imo: 0, n: 0 };
+    return { monthly: meses, ultimo: ultimo, nLinhas: linhas.length };
+  }
+
+  // Rendimento por mês. Ignora de propósito o filtro de Movimentação: o cálculo
+  // precisa enxergar saldos E movimentações ao mesmo tempo.
+  function computeRend() {
+    var base = FIN.patrimonio.filter(function (r) {
+      if (r[PC.data] < PAT.from || r[PC.data] > PAT.to) return false;
+      if (PAT.cats.length && PAT.cats.indexOf(r[PC.categoria]) < 0) return false;
+      if (PAT.descs.length && PAT.descs.indexOf(r[PC.descricao]) < 0) return false;
+      if (PAT.titular !== "Todos" && r[PC.investidor] !== PAT.titular) return false;
+      return true;
+    });
+
+    var saldo = {}, movs = {}, pl = {}, alug = {};
+    base.forEach(function (r) {
+      var ym = r[PC.data].slice(0, 7), m = r[PC.movimentacao];
+      if (ehAluguel(m)) alug[ym] = (alug[ym] || 0) + r[PC.valor];
+      if (m === "Saldo" && r[PC.tipo] === "Ativo") saldo[ym] = (saldo[ym] || 0) + r[PC.valor];
+      if (m === "Aporte" || m === "Saque" || m === "Impostos") movs[ym] = (movs[ym] || 0) + r[PC.valor];
+      if (m === "Saldo" || m === "Valor") pl[ym] = (pl[ym] || 0) + r[PC.valor];  // passivo já negativo
+    });
+
+    // Cobertura cruza o patrimônio com a aba Dados. O filtro de titular vale
+    // para os dois lados; os de categoria e descrição são do patrimônio e não
+    // fazem sentido sobre gastos e rendas.
+    var gm = {}, rm = {};
+    TX.forEach(function (t) {
+      if (PAT.titular !== "Todos" && t.titular !== PAT.titular) return;
+      var ym = t.data.slice(0, 7);
+      if (t.tipo === "Gastos") gm[ym] = (gm[ym] || 0) - t.valor;
+      else if (t.tipo === "Rendas") rm[ym] = (rm[ym] || 0) + t.valor;
+    });
+
+    var mesesPl = Object.keys(pl).sort();
+    var serieePl = mesesPl.map(function (ym) {
+      return { ym: ym, pl: pl[ym], gastos: gm[ym] || 0, rendas: rm[ym] || 0 };
+    });
+
+    // Meses com aluguel mas sem retrato de saldo (ex.: filtro só de Imóveis)
+    // entram com o saldo anterior repetido, para o aluguel não sumir.
+    var meses = Object.keys(saldo).concat(Object.keys(alug).filter(function (k) {
+      return saldo[k] === undefined;
+    })).sort();
+    var serie = [], ant = null, pend = 0;
+    for (var i = 0; i < meses.length; i++) {
+      var ym = meses[i], temSaldo = saldo[ym] !== undefined;
+      if (ant === null) {
+        if (temSaldo) { ant = saldo[ym]; continue; }   // primeiro retrato: sem base
+        ant = 0;
+      }
+      var atual = temSaldo ? saldo[ym] : ant;
+      // Movimentação de mês sem retrato fica para o próximo saldo, que a contém.
+      var mv = (movs[ym] || 0) + pend;
+      if (temSaldo) pend = 0; else { pend = mv; mv = 0; }
+      var al = alug[ym] || 0;
+      var rend = atual - ant - mv + al;
+      serie.push({
+        ym: ym, rend: rend, base: ant, saldo: atual, movs: mv, alug: al,
+        pct: ant ? (rend / ant) * 100 : 0,
+        pctPl: pl[ym] ? (rend / pl[ym]) * 100 : 0,
+        pl: pl[ym] || 0
+      });
+      ant = atual;
+    }
+    return { serie: serie, pl: serieePl };
+  }
+
+  function renderPat() {
+    var r = computePat();
+    var u = r.ultimo;
+    var pl = u.ativos - u.passivos;
+    var quando = u.ym ? "saldo de " + rotuloMes(u.ym) : "sem dados no período";
+
+    function põeP(id, valor, sub, sinal) {
+      var el = document.getElementById(id);
+      el.textContent = money(valor);
+      el.className = "val" + (sinal ? (valor < 0 ? " neg" : " pos") : "");
+      document.getElementById(id + "Sub").textContent = sub;
+    }
+
+    põeP("pAtivos", u.ativos, quando);
+    põeP("pPassivos", u.passivos, quando);
+    põeP("pLiquido", pl, u.ativos ? pct((pl / u.ativos) * 100) + " dos ativos" : quando, true);
+    põeP("pInvest", u.inv, u.ativos ? pct((u.inv / u.ativos) * 100) + " dos ativos" : quando);
+    põeP("pImoveis", u.imo, "imóvel menos financiamento");
+
+    desenhaGrafico(IDS_PAT, r.monthly, VISOES_PAT[PAT.chartView] || VISOES_PAT.ambos);
+
+    var vr = VISOES_REND[PAT.rendView] || VISOES_REND.abs;
+    var rd = computeRend();
+    desenhaLinhas(IDS_REND, vr.dados === "pl" ? rd.pl : rd.serie, vr);
+
+    document.getElementById("patChartHint").textContent =
+      document.getElementById("patChartHint").textContent +
+      (r.monthly.length ? " · " + fmtInt.format(r.nLinhas) + " lançamentos" : "");
+  }
+
+  function renderHist(r) {
+    var retorno = r.totRendas - r.totGastos;
+    var nm = r.months.length;
+
+    function põe(id, valor, sub, sinal) {
+      var el = document.getElementById(id);
+      el.textContent = money(valor);
+      el.className = "val" + (sinal ? (valor < 0 ? " neg" : " pos") : "");
+      document.getElementById(id + "Sub").textContent = sub;
+    }
+
+    põe("hMeta", r.metaTotal, nm + (nm === 1 ? " mês somado" : " meses somados"));
+    põe("hGastos", r.totGastos,
+      r.metaTotal ? pct((r.totGastos / r.metaTotal) * 100) + " da meta" : "sem meta no período");
+    põe("hRendas", r.totRendas, fmtInt.format(r.nRendas) + " lançamentos");
+    põe("hRetorno", retorno,
+      r.totRendas ? pct((retorno / r.totRendas) * 100) + " das rendas" : "sem rendas", true);
+    põe("hSaldo", r.saldo,
+      r.nForaGR ? "inclui " + r.nForaGR + " de imóvel/amortização (" + money(r.valForaGR) + ")"
+                : "todos os tipos de lançamento", true);
+
+    renderChart(r);
+  }
+
+  function render() {
+    var r = compute();
+    renderXFilter();
+
+    if (state.panel === "hist") { renderHist(r); return; }
+
+    renderCards(r);
+    renderHead();
+    renderTable(r);
+    renderMini({ head: "headCat", body: "bodyCat", foot: "footCat",
+                 dim: "categoria", title: "Categoria", sort: state.sortCat }, r.listCat);
+    renderMini({ head: "headEst", body: "bodyEst", foot: "footEst",
+                 dim: "estabelecimento", title: "Estabelecimento", sort: state.sortEst }, r.listEst);
+    document.getElementById("miniHint").textContent =
+      r.listCat.length + " categorias · " + r.listEst.length + " estabelecimentos";
+    renderTx(r);
+
+    // A meta é mensal e por categoria: nenhum outro filtro a reduz.
+    var mw = document.getElementById("metaWarn");
+    var why = [];
+    if (state.titular !== "Todos") why.push("titular");
+    if (state.estabs.length) why.push("estabelecimento");
+    if (state.txIds.length) why.push("transação");
+    mw.hidden = !why.length;
+    if (why.length) mw.textContent = "! meta não acompanha o filtro de " + why.join(" e ");
+  }
+
+  // ---- filter wiring -----------------------------------------------------
+  var dtFrom = document.getElementById("dtFrom"), dtTo = document.getElementById("dtTo");
+  dtFrom.min = MIN_DATE; dtFrom.max = UPPER;
+  dtTo.min = MIN_DATE; dtTo.max = UPPER;
+
+  function syncInputs() { dtFrom.value = state.from; dtTo.value = state.to; }
+
+  dtFrom.addEventListener("change", function () {
+    if (!dtFrom.value) return;
+    state.from = dtFrom.value;
+    if (state.from > state.to) { state.to = state.from; dtTo.value = state.to; }
+    render();
+  });
+  dtTo.addEventListener("change", function () {
+    if (!dtTo.value) return;
+    state.to = dtTo.value;
+    if (state.to < state.from) { state.from = state.to; dtFrom.value = state.from; }
+    render();
+  });
+
+  document.getElementById("presets").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-p]"); if (!b) return;
+    var p = b.dataset.p, d = new Date();
+    if (p === "mes") { var m = monthBounds(d); state.from = m[0]; state.to = m[1]; }
+    else if (p === "mesAnt") {
+      var ma = monthBounds(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+      state.from = ma[0]; state.to = ma[1];
+    }
+    else if (p === "3m") {
+      state.from = iso(new Date(d.getFullYear(), d.getMonth() - 2, 1));
+      state.to = monthBounds(d)[1];
+    } else if (p === "ano") {
+      state.from = iso(new Date(d.getFullYear(), 0, 1));
+      state.to = iso(new Date(d.getFullYear(), 11, 31));
+    } else { state.from = MIN_DATE; state.to = MAX_DATE; }
+    syncInputs(); render();
+  });
+
+  function additive(e) { return e.ctrlKey || e.metaKey || e.shiftKey; }
+
+  ["tbody", "bodyCat", "bodyEst", "bodyTx"].forEach(function (id) {
+    var el = document.getElementById(id);
+    el.addEventListener("click", function (e) {
+      var tr = e.target.closest("tr[data-dim]");
+      if (tr) toggleFilter(tr.dataset.dim, tr.dataset.val, additive(e));
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var tr = e.target.closest("tr[data-dim]");
+      if (tr) { e.preventDefault(); toggleFilter(tr.dataset.dim, tr.dataset.val, additive(e)); }
+    });
+  });
+
+  document.getElementById("xchips").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-dim]");
+    if (b) toggleFilter(b.dataset.dim, b.dataset.val, true);
+  });
+  document.getElementById("xclear").addEventListener("click", clearFiltros);
+
+  // Clique fora limpa a seleção. Em fase de captura, porque o handler da linha
+  // recria o tbody e o alvo original já estaria destacado do DOM na fase de bolha.
+  document.addEventListener("click", function (e) {
+    if (!activeFilters().length) return;
+    var t = e.target;
+    if (t.closest && (t.closest(".table-shell") || t.closest(".xfilter") ||
+        t.closest(".filters") || t.closest(".tabs"))) return;
+    clearFiltros();
+  }, true);
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") clearFiltros();
+  });
+
+  var seg = document.getElementById("segTitular");
+  function pintaTitulares() {
+    seg.innerHTML = TITULARES.map(function (t) {
+      return '<button type="button" data-t="' + esc(t) + '" aria-pressed="' +
+        (t === state.titular) + '">' + esc(t) + "</button>";
+    }).join("");
+  }
+  pintaTitulares();
+  function syncTitular() {
+    Array.prototype.forEach.call(seg.querySelectorAll("button"), function (x) {
+      x.setAttribute("aria-pressed", String(x.dataset.t === state.titular));
+    });
+  }
+
+  seg.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-t]"); if (!b) return;
+    state.titular = b.dataset.t;
+    syncTitular();
+    render();
+  });
+
+  var panelSel = document.getElementById("panelSel");
+  var PANEL_HINT = {
+    mes: "recorte padrão: mês corrente",
+    hist: "recorte padrão: 01/12/2025 até hoje"
+  };
+
+  function trocarPainel(key) {
+    state = PANELS[key];
+    document.getElementById("panel-mes").hidden = key !== "mes";
+    document.getElementById("panel-hist").hidden = key !== "hist";
+    document.getElementById("panelHint").textContent = PANEL_HINT[key];
+    syncInputs();
+    syncTitular();
+    syncChartSeg();
+    render();
+  }
+
+  panelSel.addEventListener("change", function () { trocarPainel(panelSel.value); });
+
+  var segChart = document.getElementById("segChart");
+  segChart.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-v]"); if (!b) return;
+    state.chartView = b.dataset.v;
+    syncChartSeg();
+    render();
+  });
+
+  function syncChartSeg() {
+    Array.prototype.forEach.call(segChart.querySelectorAll("button"), function (x) {
+      x.setAttribute("aria-pressed", String(x.dataset.v === state.chartView));
+    });
+  }
+
+  // ---- filtros do Patrimônio ---------------------------------------------
+  var patFrom = document.getElementById("patFrom"), patTo = document.getElementById("patTo");
+  patFrom.min = MIN_DATE; patFrom.max = UPPER;
+  patTo.min = MIN_DATE; patTo.max = UPPER;
+  patFrom.value = PAT.from; patTo.value = PAT.to;
+
+  patFrom.addEventListener("change", function () {
+    if (!patFrom.value) return;
+    PAT.from = patFrom.value;
+    if (PAT.from > PAT.to) { PAT.to = PAT.from; patTo.value = PAT.to; }
+    renderPat();
+  });
+  patTo.addEventListener("change", function () {
+    if (!patTo.value) return;
+    PAT.to = patTo.value;
+    if (PAT.to < PAT.from) { PAT.from = PAT.to; patFrom.value = PAT.from; }
+    renderPat();
+  });
+
+  // Dropdown de múltipla escolha. Seleção vazia significa "todas", igual à
+  // convenção dos filtros cruzados das tabelas.
+  var FECHAR = [];
+  function fechaDropdowns() { FECHAR.forEach(function (f) { f(); }); }
+
+  function multiSelect(elId, valores, chave, rotulo) {
+    var host = document.getElementById(elId);
+    var arr = PAT[chave];
+    host.className = "ms";
+    host.innerHTML =
+      '<button type="button" class="ms-btn" aria-expanded="false" aria-haspopup="true"></button>' +
+      '<div class="ms-pop" hidden>' +
+        '<div class="ms-acts"><button type="button" data-limpar>Limpar seleção</button></div>' +
+        valores.map(function (v) {
+          return '<label><input type="checkbox" value="' + esc(v) + '"><span>' + esc(v) + "</span></label>";
+        }).join("") +
+      "</div>";
+
+    var btn = host.querySelector(".ms-btn"), pop = host.querySelector(".ms-pop");
+
+    function sync() {
+      Array.prototype.forEach.call(pop.querySelectorAll("input"), function (i) {
+        i.checked = arr.indexOf(i.value) >= 0;
+      });
+      var txt = arr.length === 0 ? rotulo
+        : (arr.length === 1 ? arr[0] : arr.length + " selecionadas");
+      btn.textContent = txt;
+      btn.title = arr.length ? arr.join(" · ") : rotulo;
+      btn.classList.toggle("on", arr.length > 0);
+      pop.querySelector("[data-limpar]").hidden = arr.length === 0;
+    }
+
+    function fecha() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+    FECHAR.push(fecha);
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var abrir = pop.hidden;
+      fechaDropdowns();
+      pop.hidden = !abrir;
+      btn.setAttribute("aria-expanded", String(abrir));
+    });
+    pop.addEventListener("click", function (e) { e.stopPropagation(); });
+    pop.addEventListener("change", function (e) {
+      if (e.target.type !== "checkbox") return;
+      var k = arr.indexOf(e.target.value);
+      if (e.target.checked) { if (k < 0) arr.push(e.target.value); }
+      else if (k >= 0) arr.splice(k, 1);
+      sync(); renderPat();
+    });
+    pop.querySelector("[data-limpar]").addEventListener("click", function () {
+      arr.length = 0; sync(); renderPat();
+    });
+
+    sync();
+  }
+
+  var segPatTit = document.getElementById("segPatTit");
+
+  // Os valores dos filtros vêm da planilha, então são remontados a cada carga.
+  function montarFiltrosPat() {
+    FECHAR.length = 0;
+    multiSelect("msPatCat", valoresDe(PC.categoria), "cats", "Todas");
+    multiSelect("msPatMov", valoresDe(PC.movimentacao), "movs", "Todas");
+    multiSelect("msPatDesc", valoresDe(PC.descricao), "descs", "Todas");
+    segPatTit.innerHTML = ["Todos"].concat(valoresDe(PC.investidor)).map(function (v) {
+      return '<button type="button" data-t="' + esc(v) + '" aria-pressed="' +
+        (PAT.titular === v) + '">' + esc(v) + "</button>";
+    }).join("");
+  }
+  montarFiltrosPat();
+  segPatTit.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-t]"); if (!b) return;
+    PAT.titular = b.dataset.t;
+    Array.prototype.forEach.call(segPatTit.querySelectorAll("button"), function (x) {
+      x.setAttribute("aria-pressed", String(x.dataset.t === PAT.titular));
+    });
+    renderPat();
+  });
+
+  var rendSel = document.getElementById("rendSel");
+  rendSel.addEventListener("change", function () {
+    PAT.rendView = rendSel.value;
+    renderPat();
+  });
+
+  document.addEventListener("click", fechaDropdowns);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") fechaDropdowns();
+  });
+
+  var segPatChart = document.getElementById("segPatChart");
+  segPatChart.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-v]"); if (!b) return;
+    PAT.chartView = b.dataset.v;
+    Array.prototype.forEach.call(segPatChart.querySelectorAll("button"), function (x) {
+      x.setAttribute("aria-pressed", String(x.dataset.v === PAT.chartView));
+    });
+    renderPat();
+  });
+
+  // ---- tabs --------------------------------------------------------------
+  var tabs = [
+    { btn: document.getElementById("tab-dom"), panel: document.getElementById("panel-dom") },
+    { btn: document.getElementById("tab-pat"), panel: document.getElementById("panel-pat") }
+  ];
+  tabs.forEach(function (t, i) {
+    t.btn.addEventListener("click", function () {
+      tabs.forEach(function (o, j) {
+        o.btn.setAttribute("aria-selected", String(i === j));
+        o.panel.hidden = i !== j;
+      });
+      // o gráfico precisa medir o container, o que só funciona com ele visível
+      if (i === 1) renderPat();
+    });
+  });
+
+  // ---- provenance + patrimonio inventory --------------------------------
+  function br(d) { return d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4); }
+
+  // ---- Atualizar a partir da planilha -------------------------------------
+  var PLANILHA_ID = "1PQSYK-M_-FWdIi4OwIkTUU76K7UIHW4XiAjLwQvT8jU";
+  // Nome de exibição do conector: é por ele que o viewer casa a permissão.
+  var CONECTOR = "Google Drive";
+  var XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  var CDN_XLSX = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+
+  // Data do pacote embutido no arquivo. Só serve para decidir quem é mais
+  // recente: o que veio publicado ou o que está guardado na nuvem.
+  var SEMENTE_EM = "2026-09-26T12:00:00Z";
+  var COL_SNAP = "snapshot";
+  var LOTE_TX = 400;
+
+  var dbNs = null;
+  var podeSalvar = null;   // null = o servidor não disse; a gravação decide
+  var origemDados = "semente", quandoDados = SEMENTE_EM;
+
+  // Mensagem por código, para quem clicar saber o que resolver.
+  var RECADO = {
+    server_not_connected: "conecte o Google Drive na sua conta Claude",
+    server_not_found: "conecte o Google Drive na sua conta Claude",
+    needs_reauth: "reconecte o Google Drive na sua conta Claude",
+    server_unavailable: "o Drive não respondeu; tente de novo",
+    consent_required: "autorize o acesso ao Drive para continuar",
+    approval_required: "autorize o acesso ao Drive para continuar",
+    selection_required: "escolha a conta do Drive e tente de novo",
+    not_granted: "esta visualização não pode usar o conector",
+    capability_disabled: "esta visualização não pode usar o conector",
+    capability_removed: "esta visualização não pode usar o conector",
+    not_in_manifest: "esta visualização não pode usar o conector",
+    blocked_by_policy: "bloqueado por política da organização",
+    rate_limited: "muitas tentativas seguidas; espere um instante",
+    sem_conector: "conecte o Google Drive na sua conta Claude e recarregue a página",
+    negado: "autorização recusada — clique de novo e aceite o pedido do Claude",
+    indisponivel: "esta visualização não recebeu acesso ao conector",
+    cancelled: "cancelado",
+    tool_error: "o Drive recusou: confira se a planilha está compartilhada com você",
+    bad_request: "o Drive recusou o pedido",
+    upstream_error: "o Drive falhou; tente de novo"
+  };
+
+  function idParte(i) { return "tx" + String(i).padStart(3, "0"); }
+
+  // O documento tem teto de 256 KiB, então os lançamentos vão fatiados.
+  function salvarNaNuvem(fin, quando) {
+    if (!dbNs) return Promise.resolve("sem-db");
+    var col = dbNs.collection(COL_SNAP);
+    var partes = [];
+    for (var i = 0; i < fin.tx.length; i += LOTE_TX) partes.push(fin.tx.slice(i, i + LOTE_TX));
+
+    var cadeia = col.doc("base").set({
+      dims: fin.dims, metas: fin.metas, patrimonio: fin.patrimonio,
+      txCols: fin.txCols, metaCols: fin.metaCols, patCols: fin.patCols
+    });
+    partes.forEach(function (linhas, i) {
+      cadeia = cadeia.then(function () { return col.doc(idParte(i)).set({ rows: linhas }); });
+    });
+    // "info" por último: é ele que valida o conjunto na próxima leitura.
+    cadeia = cadeia.then(function () {
+      return col.doc("info").set({ atualizadoEm: quando, partes: partes.length, nTx: fin.tx.length });
+    });
+    // Varre sobras de uma carga anterior que tinha mais fatias.
+    return cadeia.then(function () { return col.get(); }).then(function (snap) {
+      var sobra = snap.docs.filter(function (d) {
+        return /^tx\d{3}$/.test(d.id) && +d.id.slice(2) >= partes.length;
+      });
+      return sobra.reduce(function (pr, d) {
+        return pr.then(function () { return col.doc(d.id).delete(); });
+      }, Promise.resolve());
+    }).then(function () { return "ok"; });
+  }
+
+  function lerDaNuvem() {
+    if (!dbNs) return Promise.resolve(null);
+    return dbNs.collection(COL_SNAP).get().then(function (snap) {
+      var mapa = {};
+      snap.docs.forEach(function (d) { if (d.exists) mapa[d.id] = d.data(); });
+      var info = mapa.info, base = mapa.base;
+      if (!info || !base || !info.atualizadoEm) return null;
+      var tx = [];
+      for (var i = 0; i < info.partes; i++) {
+        var parte = mapa[idParte(i)];
+        if (!parte || !parte.rows) return null;      // conjunto incompleto: descarta
+        tx = tx.concat(parte.rows);
+      }
+      if (info.nTx && tx.length !== info.nTx) return null;
+      return {
+        quando: info.atualizadoEm,
+        fin: { dims: base.dims, tx: tx, metas: base.metas, patrimonio: base.patrimonio,
+               txCols: base.txCols, metaCols: base.metaCols, patCols: base.patCols }
+      };
+    }, function () { return null; });
+  }
+
+  var barraAtu = document.getElementById("barraAtualizar");
+  var btnAtu = document.getElementById("btnAtualizar");
+  var stAtu = document.getElementById("statusAtualizar");
+
+  function status(txt, cls) {
+    stAtu.textContent = txt;
+    stAtu.className = "st" + (cls ? " " + cls : "");
+  }
+
+  function carregaLeitor() {
+    if (window.XLSX) return Promise.resolve();
+    return new Promise(function (ok, falha) {
+      var sc = document.createElement("script");
+      sc.src = CDN_XLSX;
+      sc.onload = function () { ok(); };
+      sc.onerror = function () { falha(new Error("não consegui carregar o leitor de planilha")); };
+      document.head.appendChild(sc);
+    });
+  }
+
+  function bytesDeBase64(b64) {
+    var bin = atob(b64), n = bin.length, out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  // Datas chegam como serial do Excel; converto em UTC para o dia não escorregar.
+  function dataIso(v) {
+    if (v == null || v === "") return null;
+    if (typeof v === "number") {
+      return new Date(Math.round((v - 25569) * 86400000)).toISOString().slice(0, 10);
+    }
+    if (v instanceof Date) return new Date(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate()))
+      .toISOString().slice(0, 10);
+    var t = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+    var br2 = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    return br2 ? br2[3] + "-" + br2[2] + "-" + br2[1] : null;
+  }
+  function num(v) { var n = Number(v); return isFinite(n) ? Math.round(n * 100) / 100 : 0; }
+  function txt(v) { return v == null ? "" : String(v).trim(); }
+
+  function acharAba(wb, alvo) {
+    var chave = alvo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    for (var i = 0; i < wb.SheetNames.length; i++) {
+      var n = wb.SheetNames[i].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (n === chave) return wb.Sheets[wb.SheetNames[i]];
+    }
+    return null;
+  }
+
+  function montarFIN(wb) {
+    var U = window.XLSX.utils;
+    function grade(nome) {
+      var ws = acharAba(wb, nome);
+      return ws ? U.sheet_to_json(ws, { header: 1, raw: true, defval: null }) : [];
+    }
+    function indices(cab) {
+      var m = {};
+      (cab || []).forEach(function (h, i) { if (h != null) m[String(h).trim()] = i; });
+      return m;
+    }
+
+    var dd = grade("Dados"), iD = indices(dd[0]);
+    var linhasD = dd.slice(1).filter(function (r) { return r && r[iD["ID"]] != null && r[iD["DATA"]] != null; });
+    if (!linhasD.length) throw new Error("a aba Dados voltou vazia");
+
+    function unicos(idx) {
+      var vis = {}, out = [];
+      linhasD.forEach(function (r) {
+        var v = txt(r[idx]);
+        if (v && !vis[v]) { vis[v] = 1; out.push(v); }
+      });
+      return out.sort();
+    }
+    var dims = {
+      titular: unicos(iD["TITULAR"]), tipo: unicos(iD["TIPO"]),
+      categoria: unicos(iD["CATEGORIA"]), conta: unicos(iD["CONTA"]),
+      tipoConta: unicos(iD["TIPO CONTA"]), estabelecimento: unicos(iD["ESTABELECIMENTO"]),
+      recorrencia: unicos(iD["RECORRENCIA"]), macro: unicos(iD["MACRO-CATEGORIA"])
+    };
+    var pos = {};
+    Object.keys(dims).forEach(function (k) {
+      pos[k] = {};
+      dims[k].forEach(function (v, i) { pos[k][v] = i; });
+    });
+    function idx(k, v) { var i = pos[k][txt(v)]; return i === undefined ? -1 : i; }
+
+    var tx = linhasD.map(function (r) {
+      return [dataIso(r[iD["DATA"]]), idx("titular", r[iD["TITULAR"]]), idx("tipo", r[iD["TIPO"]]),
+        idx("categoria", r[iD["CATEGORIA"]]), num(r[iD["VALOR"]]), idx("conta", r[iD["CONTA"]]),
+        idx("tipoConta", r[iD["TIPO CONTA"]]), idx("estabelecimento", r[iD["ESTABELECIMENTO"]]),
+        idx("recorrencia", r[iD["RECORRENCIA"]]), idx("macro", r[iD["MACRO-CATEGORIA"]]),
+        Number(r[iD["ID"]]), txt(r[iD["DESCRIÇÃO"]])];
+    }).filter(function (t) { return t[0]; });
+
+    var mm = grade("Metas"), iM = indices(mm[0]);
+    var metas = mm.slice(1)
+      .filter(function (r) { return r && r[iM["DATA"]] != null && r[iM["CATEGORIA"]] != null; })
+      .map(function (r) {
+        return [dataIso(r[iM["DATA"]]), txt(r[iM["CATEGORIA"]]), num(r[iM["VALOR"]]),
+          Number(r[iM["QUANTIDADE MESES"]] || 0), num(r[iM["VALOR ACUMULADO"]])];
+      }).filter(function (m) { return m[0]; });
+
+    var pp = grade("Patrimônio"), iP = indices(pp[0]);
+    var pat = pp.slice(1).filter(function (r) { return r && r[iP["DATA"]] != null; })
+      .map(function (r) {
+        return [dataIso(r[iP["DATA"]]), txt(r[iP["TIPO"]]), txt(r[iP["LIQUIDEZ"]]),
+          txt(r[iP["MOVIMENTACAO"]]), txt(r[iP["CATEGORIA"]]), txt(r[iP["DESCRICAO"]]),
+          txt(r[iP["INVESTIDOR"]]), num(r[iP["VALOR"]]), txt(r[iP["ANOMES"]])];
+      }).filter(function (r) { return r[0]; });
+
+    return { dims: dims, tx: tx, metas: metas, patrimonio: pat,
+             txCols: FIN.txCols, metaCols: FIN.metaCols, patCols: FIN.patCols };
+  }
+
+  // Troca o conjunto de dados e repinta tudo que depende dele.
+  function aplicarDados(fin, quando, origem) {
+    FIN = fin;
+    derivar();
+    pintaTitulares();
+    montarFiltrosPat();
+    dtFrom.min = MIN_DATE; dtFrom.max = UPPER;
+    dtTo.min = MIN_DATE; dtTo.max = UPPER;
+    patFrom.min = MIN_DATE; patFrom.max = UPPER;
+    patTo.min = MIN_DATE; patTo.max = UPPER;
+    quandoDados = quando;
+    origemDados = origem;
+    pintaProveniencia();
+    render();
+    renderPat();
+  }
+
+  // Caminho de quem só pode ler: puxa o snapshot guardado sem recarregar a página.
+  function buscarSalvo(motivo) {
+    return lerDaNuvem().then(function (g) {
+      if (!g) {
+        var e = new Error(motivo); e.code = "diag"; e.det = motivo; throw e;
+      }
+      if (g.quando <= quandoDados) {
+        var e2 = new Error("em dia"); e2.code = "em_dia"; throw e2;
+      }
+      aplicarDados(g.fin, g.quando, "nuvem");
+      var e3 = new Error("ok"); e3.code = "veio_da_nuvem"; throw e3;
+    }, function () {
+      var e = new Error(motivo); e.code = "diag"; e.det = motivo; throw e;
+    });
+  }
+
+  function agora() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  // Resolvida na abertura: use() é memoizado, então o clique não espera.
+  var promessaMcp = (window.claude && window.claude.use)
+    ? window.claude.use("mcp").catch(function () { return null; })
+    : Promise.resolve(null);
+
+  // Quem não recebe o conector (convidado de fora, por exemplo) não consegue ler
+  // a planilha, mas lê o que já foi salvo. O botão vira "buscar" em vez de erro.
+  promessaMcp.then(function (ns) {
+    if (ns) return;
+    btnAtu.textContent = "Buscar atualizações";
+    btnAtu.title = "Esta visualização não pode ler a planilha; busca a última leitura salva.";
+  });
+
+  // Ter o conector ligado na conta é uma coisa; a sessão ter concedido o
+  // conector A ESTA PÁGINA é outra. Sem a concessão, use("mcp") volta null.
+  // Aqui pedimos a autorização no clique — gesto do usuário, como manda o
+  // contrato — e devolvemos o estado real quando ela não resolve.
+  // Quando NADA resolve, o problema não é o conector: é a visualização não
+  // estar recebendo o runtime. Servida no topo (fora do visualizador do
+  // Claude) todo use() devolve null, e é isso que precisamos conseguir dizer.
+  function sondarRuntime() {
+    var noTopo;
+    try { noTopo = window.self === window.top; } catch (e) { noTopo = "?"; }
+    var nomes = ["permissions", "db", "user", "mcp"];
+    return Promise.all(nomes.map(function (n) {
+      try {
+        return Promise.resolve(window.claude.use(n)).then(
+          function (v) { return { n: n, ok: !!v }; },
+          function () { return { n: n, ok: false }; });
+      } catch (e) { return Promise.resolve({ n: n, ok: false }); }
+    })).then(function (rs) {
+      var vivos = rs.filter(function (r) { return r.ok; }).map(function (r) { return r.n; });
+      return { noTopo: noTopo, vivos: vivos, nenhuma: vivos.length === 0 };
+    });
+  }
+
+  function autorizarMcp() {
+    function falha(det) { return { ok: false, det: det }; }
+    if (!(window.claude && window.claude.use)) return Promise.resolve(falha("sem runtime do Claude"));
+    return window.claude.use("permissions").then(function (pm) {
+      if (!pm || !pm.state) {
+        return sondarRuntime().then(function (d) {
+          if (d.nenhuma) {
+            return falha(d.noTopo === true
+              ? "esta página está aberta fora do visualizador do Claude — abra o link do dashboard dentro do claude.ai"
+              : "o visualizador não liberou nenhuma capability para esta sessão — recarregue; persistindo, saia e entre de novo no claude.ai");
+          }
+          return falha("permissions indisponível · ativas: " + d.vivos.join(", "));
+        }, function () { return falha("permissions indisponível nesta visualização"); });
+      }
+      // O mapa sem argumentos omite as capabilities indisponíveis, então ele
+      // diz exatamente o que esta visualização recebeu.
+      return Promise.resolve(pm.state()).then(function (mapa) {
+        mapa = mapa || {};
+        var st = mapa.mcp;
+        if (st === undefined) {
+          var tem = Object.keys(mapa);
+          return falha("o conector não foi servido a esta visualização · recebidas: " +
+            (tem.length ? tem.join(", ") : "nenhuma"));
+        }
+        if (st === "granted") return { ok: true, det: "granted" };
+        if (st === "unavailable") return falha("mcp=unavailable");
+        // "prompt" ou "denied": perguntar. request() devolve o estado pós-pergunta.
+        return Promise.resolve(pm.request(["mcp"])).then(function (pos) {
+          var novo = (pos && pos.mcp) || "sem resposta";
+          return novo === "granted" ? { ok: true, det: "granted" } : falha("mcp=" + novo);
+        }, function (e) {
+          return falha("pedido falhou: " + ((e && (e.code || e.message)) || "?"));
+        });
+      }, function (e) {
+        return falha("não li o estado: " + ((e && (e.code || e.message)) || "?"));
+      });
+    }, function () { return falha("permissions indisponível nesta visualização"); });
+  }
+
+  function atualizar() {
+    btnAtu.disabled = true;
+    status("consultando a planilha…");
+    promessaMcp
+      .then(function (ns) {
+        if (ns) {
+          return ns.callTool(CONECTOR, "download_file_content",
+            { fileId: PLANILHA_ID, exportMimeType: XLSX_MIME });
+        }
+        // Sem conector: primeiro tenta a autorização; se nem isso existir,
+        // cai para a última leitura salva, que é o que ainda dá para servir.
+        status("procurando…");
+        return autorizarMcp().then(function (r) {
+          if (r.ok) { var e = new Error(r.det); e.code = "recarregar"; throw e; }
+          return buscarSalvo(r.det);
+        });
+      })
+      .then(function (res) {
+        var p = res && res.payload;
+        if (!p || !p.content) throw new Error("a planilha voltou sem conteúdo");
+        status("lendo as abas…");
+        return carregaLeitor().then(function () { return p.content; });
+      })
+      .then(function (b64) {
+        var wb = window.XLSX.read(bytesDeBase64(b64), { type: "array" });
+        var novo = montarFIN(wb);
+        if (!novo.tx.length) throw new Error("nenhum lançamento reconhecido");
+        var quando = new Date().toISOString();
+        aplicarDados(novo, quando, "nuvem");
+        if (podeSalvar === false) {
+          status("atualizado às " + agora() + " · só para você (precisa ser Editor para salvar)", "ok");
+          return;
+        }
+        status("gravando…");
+        return salvarNaNuvem(novo, quando).then(function (r) {
+          if (r === "sem-db") { status("atualizado às " + agora() + " · só nesta aba", "ok"); return; }
+          status("atualizado às " + agora() + " · salvo para todos", "ok");
+        }, function (err) {
+          // Abaixo do nível mínimo a gravação volta como invalid_argument.
+          var semPermissao = err && (err.code === "invalid_argument" || err.code === "not_granted");
+          status("atualizado às " + agora() +
+            (semPermissao ? " · só para você (precisa ser Editor para salvar)"
+                          : " · não consegui salvar para todos"),
+            semPermissao ? "ok" : "erro");
+        });
+      })
+      .catch(function (e) {
+        var cod = e && e.code;
+        if (cod === "recarregar") {
+          status("autorizado · recarregando…", "ok");
+          setTimeout(function () { location.reload(); }, 700);
+          return;
+        }
+        if (cod === "em_dia") { status("já está na versão mais recente", "ok"); return; }
+        if (cod === "veio_da_nuvem") {
+          var d = new Date(quandoDados);
+          status("atualizado · leitura de " + String(d.getDate()).padStart(2, "0") + "/" +
+            String(d.getMonth() + 1).padStart(2, "0") + " " + String(d.getHours()).padStart(2, "0") +
+            ":" + String(d.getMinutes()).padStart(2, "0"), "ok");
+          return;
+        }
+        // Nunca inventar causa: quando o diagnóstico tem um detalhe, é ele que vai.
+        var msg = cod === "diag"
+          ? (e.det === "mcp=denied"
+              ? "autorização recusada — clique de novo e aceite o pedido do Claude"
+              : "não consegui usar o conector · " + e.det)
+          : ((cod && RECADO[cod]) || (e && e.message) || "não deu para atualizar");
+        status(msg, "erro");
+      })
+      .then(function () { btnAtu.disabled = false; });
+  }
+
+  btnAtu.addEventListener("click", atualizar);
+
+  // Caminho sem conector: a própria pessoa envia o .xlsx baixado do Sheets.
+  // Mesmo parser, mesma gravação — só muda de onde vêm os bytes.
+  var arqPlanilha = document.getElementById("arqPlanilha");
+  var btnArq = document.getElementById("btnArquivo");
+
+  function bytesDoArquivo(f) {
+    if (f.arrayBuffer) return f.arrayBuffer().then(function (b) { return new Uint8Array(b); });
+    return new Promise(function (ok, falha) {
+      var fr = new FileReader();
+      fr.onload = function () { ok(new Uint8Array(fr.result)); };
+      fr.onerror = function () { falha(new Error("não consegui ler o arquivo")); };
+      fr.readAsArrayBuffer(f);
+    });
+  }
+
+  function concluirCarga(novo) {
+    var quando = new Date().toISOString();
+    aplicarDados(novo, quando, "nuvem");
+    if (podeSalvar === false) {
+      status("atualizado às " + agora() + " · só para você (precisa ser Editor para salvar)", "ok");
+      return;
+    }
+    status("gravando…");
+    return salvarNaNuvem(novo, quando).then(function (r) {
+      status(r === "sem-db" ? "atualizado às " + agora() + " · só nesta aba"
+                            : "atualizado às " + agora() + " · salvo para todos", "ok");
+    }, function (err) {
+      var semPermissao = err && (err.code === "invalid_argument" || err.code === "not_granted");
+      status("atualizado às " + agora() +
+        (semPermissao ? " · só para você (precisa ser Editor para salvar)"
+                      : " · não consegui salvar para todos"),
+        semPermissao ? "ok" : "erro");
+    });
+  }
+
+  btnArq.addEventListener("click", function () { arqPlanilha.click(); });
+
+  arqPlanilha.addEventListener("change", function () {
+    var f = arqPlanilha.files && arqPlanilha.files[0];
+    if (!f) return;
+    btnArq.disabled = true; btnAtu.disabled = true;
+    status("lendo " + f.name + "…");
+    carregaLeitor()
+      .then(function () { return bytesDoArquivo(f); })
+      .then(function (bytes) {
+        var wb = window.XLSX.read(bytes, { type: "array" });
+        var novo = montarFIN(wb);
+        if (!novo.tx.length) throw new Error("não achei lançamentos — confira se é a planilha certa");
+        return concluirCarga(novo);
+      })
+      .catch(function (e) {
+        status((e && e.message) || "não consegui ler esse arquivo", "erro");
+      })
+      .then(function () {
+        btnArq.disabled = false; btnAtu.disabled = false;
+        arqPlanilha.value = "";
+      });
+  });
+
+  if (window.claude && window.claude.use) {
+    // A página abre com o pacote embutido e, se houver uma leitura mais recente
+    // guardada, troca por ela — é isso que faz o "Atualizar" sobreviver a uma
+    // republicação do painel.
+    window.claude.use("user").then(function (u) {
+      if (!u) return;
+      try {
+        if (u.isOwner && u.isOwner()) { podeSalvar = true; return; }
+        if (u.can) { var r = u.can("data.write"); if (r !== null && r !== undefined) podeSalvar = !!r; }
+      } catch (e) { /* sem informação: deixa a gravação decidir */ }
+    }, function () {});
+
+    window.claude.use("db").then(function (ns) {
+      if (!ns) return;
+      dbNs = ns;
+      return lerDaNuvem().then(function (guardado) {
+        if (!guardado) return;
+        if (guardado.quando <= SEMENTE_EM) return;   // o embutido é mais novo
+        if (!guardado.fin.tx || !guardado.fin.tx.length) return;
+        aplicarDados(guardado.fin, guardado.quando, "nuvem");
+      });
+    }, function () {});
+  }
+  window.__aplicarDados = function (fin, quando) { aplicarDados(fin, quando || new Date().toISOString(), "nuvem"); };
+
+  function pintaProveniencia() {
+    var quando = "";
+    if (origemDados === "nuvem") {
+      var d = new Date(quandoDados);
+      if (!isNaN(d)) {
+        quando = " · planilha lida em " + String(d.getDate()).padStart(2, "0") + "/" +
+          String(d.getMonth() + 1).padStart(2, "0") + " " +
+          String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      }
+    }
+    document.getElementById("prov").textContent =
+      "Gerenciamento Finanças (Família) · " + fmtInt.format(TX.length) + " lançamentos · " +
+      br(MIN_DATE) + " – " + br(MAX_DATE) + quando;
+  }
+  pintaProveniencia();
+
+  renderPat();
+
+  trocarPainel(panelSel.value);
+})();
+</script>
+
+</body></html>

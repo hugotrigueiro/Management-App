@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { buildState as buildFinance, renderFinance } from "./finance.js?v=14";
+import { buildState as buildFinance, buildFIN } from "./finance.js?v=15";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -946,7 +946,6 @@ function applyMod() {
   $("mod-title").textContent = MOD_TITLES[S.mod];
   document.title = MOD_TITLES[S.mod];
   if (S.mod === "fin" && !S.fin.state && !S.fin.loading && !S.fin.error) loadFinance();
-  else if (S.mod === "fin" && S.fin.state) renderFinance($("fin-root"), S.fin.state, S.fin.ui);
 }
 $("modnav").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-mod]");
@@ -973,13 +972,29 @@ async function loadFinance() {
     S.fin.state = buildFinance(data); S.fin.options = data.options || null; S.fin.at = new Date(data.fetched_at || Date.now());
     const hh = `${String(S.fin.at.getHours()).padStart(2, "0")}:${String(S.fin.at.getMinutes()).padStart(2, "0")}`;
     finStatus(`${src.title} · atualizado às ${hh}`);
-    await renderFinance($("fin-root"), S.fin.state, S.fin.ui);
+    mountPainel(buildFIN(data), data.fetched_at);
   } catch (e) {
     S.fin.error = e.message;
     finStatus("Não consegui carregar as finanças: " + e.message, true);
   } finally { S.fin.loading = false; btn.classList.remove("spinning"); btn.disabled = false; }
 }
 $("fin-refresh").addEventListener("click", () => loadFinance());
+
+// O painel de finanças é uma página própria (fin/painel.html) dentro de um iframe da mesma origem.
+// Se já está aberto, só troca os dados: os filtros escolhidos continuam.
+function mountPainel(fin, quando) {
+  window.__FIN__ = fin;
+  const old = $("fin-frame");
+  if (old && old.contentWindow && old.contentWindow.__aplicarDados) { old.contentWindow.__aplicarDados(fin, quando); return; }
+  const fr = h("iframe", { id: "fin-frame", src: "fin/painel.html?v=15", title: "Painel de finanças", scrolling: "no" });
+  fr.addEventListener("load", () => {
+    const doc = fr.contentDocument; if (!doc) return;
+    const fit = () => { fr.style.height = doc.documentElement.scrollHeight + "px"; };
+    fit(); new ResizeObserver(fit).observe(doc.body);
+    if (fr.contentWindow.__aplicarDados) fr.contentWindow.__aplicarDados(fin, quando);
+  });
+  $("fin-root").replaceChildren(fr);
+}
 
 /* ---------- Novo lançamento ---------- */
 const L = { tipo: "Gastos", catTouched: false };

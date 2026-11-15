@@ -390,3 +390,8 @@ body.no-fin .modnav { display: none; }
 .fin-row-new td { background: var(--accent-soft); }
 .fin-kpi .val { white-space: nowrap; }
 @media (max-width: 420px) { .fin-kpis { grid-template-columns: 1fr 1fr; } .fin-kpi .val { font-size: 17px; } .fin-kpi { padding: 11px 12px; } }
+
+/* Painel de finanças embutido */
+#fin-frame { display: block; width: 100%; min-height: 480px; border: 0; background: transparent; }
+@media (max-width: 719px) { .finance { padding: 10px 0 0; } .fin-status { padding: 0 16px; } }
+@media (min-width: 720px) { .finance { padding: 12px 0 0; } .fin-status { padding: 0 20px; } }
