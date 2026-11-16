@@ -395,3 +395,22 @@ body.no-fin .modnav { display: none; }
 #fin-frame { display: block; width: 100%; min-height: 480px; border: 0; background: transparent; }
 @media (max-width: 719px) { .finance { padding: 10px 0 0; } .fin-status { padding: 0 16px; } }
 @media (min-width: 720px) { .finance { padding: 12px 0 0; } .fin-status { padding: 0 20px; } }
+
+/* Nome do app e separadores do topo */
+.apptitle { display: flex; align-items: baseline; gap: 8px; margin: 0; white-space: nowrap; }
+.apptitle .appname { font-weight: 700; }
+.apptitle .appsep { color: var(--muted); font-weight: 400; }
+.topsep { align-self: stretch; width: 1px; min-height: 26px; background: var(--line); flex: none; margin: 2px 4px; }
+.topsep-lead { display: none; }
+@media (min-width: 720px) {
+  body:not(.no-fin) #mod-title, body:not(.no-fin) .apptitle .appsep { display: none; }
+  .apptitle { font-size: 18px; }
+}
+@media (max-width: 719px) {
+  .brand > .topsep { display: none; }
+  .apptitle { flex-direction: column; gap: 0; line-height: 1.15; }
+  .apptitle .appname { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .apptitle .appsep { display: none; }
+  .top-actions { gap: 6px; }
+  .topsep { margin: 2px 1px; }
+}

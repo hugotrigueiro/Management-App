@@ -515,6 +515,9 @@
   }
 
   /* ---------- dentro do app ---------- */
+  .cards-5 .card .val { font-size: clamp(17px, 1.75vw, 22px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tbl-sm td.rendas { font-weight: 600; color: var(--rendas-ink); }
+  .tbl-tx td.tipo { font-family: var(--sans); font-size: 12px; color: var(--ink-2); text-align: left; }
   html, body { background: transparent !important; }
   .wrap { padding-block: 4px 24px; }
   .masthead h1, #barraAtualizar { display: none !important; }
@@ -740,6 +743,40 @@
         <div class="chartscroll" id="chartScroll"></div>
         <div class="tip" id="chartTip" hidden></div>
       </div>
+
+      <div class="section-head">
+        <h2>Gastos por Categoria e Estabelecimento</h2>
+        <span class="hint" id="hGHint"></span>
+      </div>
+      <div class="duo">
+        <div class="table-shell tbl-sm">
+          <table><thead><tr id="headHGCat"></tr></thead><tbody id="bodyHGCat"></tbody><tfoot id="footHGCat"></tfoot></table>
+        </div>
+        <div class="table-shell tbl-sm">
+          <table><thead><tr id="headHGEst"></tr></thead><tbody id="bodyHGEst"></tbody><tfoot id="footHGEst"></tfoot></table>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Rendas por Categoria e Estabelecimento</h2>
+        <span class="hint" id="hRHint"></span>
+      </div>
+      <div class="duo">
+        <div class="table-shell tbl-sm">
+          <table><thead><tr id="headHRCat"></tr></thead><tbody id="bodyHRCat"></tbody><tfoot id="footHRCat"></tfoot></table>
+        </div>
+        <div class="table-shell tbl-sm">
+          <table><thead><tr id="headHREst"></tr></thead><tbody id="bodyHREst"></tbody><tfoot id="footHREst"></tfoot></table>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Tabela de Transações (todas)</h2>
+        <span class="hint" id="hTxHint"></span>
+      </div>
+      <div class="table-shell tbl-tx">
+        <table><thead><tr id="headHTx"></tr></thead><tbody id="bodyHTx"></tbody><tfoot id="footHTx"></tfoot></table>
+      </div>
     </div>
   </section>
 
@@ -955,6 +992,9 @@
       sortKey: "gastos", sortDir: -1,
       sortCat: { k: "gastos", d: -1 }, sortEst: { k: "gastos", d: -1 },
       sortTx: { k: "data", d: -1 },
+      sortHGCat: { k: "total", d: -1 }, sortHGEst: { k: "total", d: -1 },
+      sortHRCat: { k: "total", d: -1 }, sortHREst: { k: "total", d: -1 },
+      sortHTx: { k: "data", d: -1 },
       chartView: "ambos"
     };
   }
@@ -2073,6 +2113,148 @@
                 : "todos os tipos de lançamento", true);
 
     renderChart(r);
+    renderHistTables(r);
+  }
+
+  // ---- tabelas do Histórico de Performance -------------------------------
+  // Quantidade, média mensal (desde o início da série até o fim do período), % e total.
+  var HCOLS = [
+    { k: "key", t: "" },
+    { k: "qtd", t: "Qtd" },
+    { k: "media", t: "Média mensal" },
+    { k: "pct", t: "%" },
+    { k: "total", t: "Total" }
+  ];
+
+  function histAgg(rows, key, tipo, serie, nMeses) {
+    var sinal = tipo === "Gastos" ? -1 : 1, m = {}, hist = {};
+    rows.forEach(function (t) {
+      var o = m[t[key]] || (m[t[key]] = { key: t[key], qtd: 0, total: 0 });
+      o.qtd++; o.total += sinal * t.valor;
+    });
+    serie.forEach(function (t) { hist[t[key]] = (hist[t[key]] || 0) + sinal * t.valor; });
+    var list = Object.keys(m).map(function (k) { return m[k]; });
+    var tot = list.reduce(function (s, o) { return s + o.total; }, 0);
+    list.forEach(function (o) {
+      o.pct = tot ? (o.total / tot) * 100 : 0;
+      o.media = nMeses ? (hist[o.key] || 0) / nMeses : 0;
+    });
+    return list;
+  }
+
+  function renderHistTable(cfg, list) {
+    var st = cfg.sort;
+    var head = document.getElementById(cfg.head);
+    head.innerHTML = HCOLS.map(function (c) {
+      var active = st.k === c.k;
+      return '<th tabindex="0" data-k="' + c.k + '" data-active="' + (active ? 1 : 0) + '" ' +
+        'aria-sort="' + (active ? (st.d === -1 ? "descending" : "ascending") : "none") + '">' +
+        (c.k === "key" ? cfg.title : c.t) + '<span class="arrow">' + (st.d === -1 ? "▼" : "▲") + "</span></th>";
+    }).join("");
+    Array.prototype.forEach.call(head.querySelectorAll("th"), function (th) {
+      function go() {
+        var k = th.dataset.k;
+        if (st.k === k) st.d *= -1; else { st.k = k; st.d = k === "key" ? 1 : -1; }
+        render();
+      }
+      th.addEventListener("click", go);
+      th.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+    var rows = list.slice().sort(function (a, b) {
+      if (st.k === "key") return String(a.key).localeCompare(String(b.key), "pt-BR") * st.d;
+      return (a[st.k] - b[st.k]) * st.d;
+    });
+    var cls = cfg.rendas ? "rendas" : "gastos";
+    var tb = document.getElementById(cfg.body);
+    tb.className = DIMS[cfg.dim].sel().length ? "has-sel" : "";
+    tb.innerHTML = rows.length ? rows.map(function (c) {
+      return rowOpen(cfg.dim, c.key) +
+        "<td>" + esc(c.key) + "</td>" +
+        '<td class="qtd">' + fmtInt.format(c.qtd) + "</td>" +
+        "<td>" + money(c.media) + "</td>" +
+        "<td>" + pct(c.pct) + "</td>" +
+        '<td class="' + cls + '">' + money(c.total) + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nada neste recorte.</td></tr>';
+    var tQtd = rows.reduce(function (s, c) { return s + c.qtd; }, 0);
+    var tMed = rows.reduce(function (s, c) { return s + c.media; }, 0);
+    var tTot = rows.reduce(function (s, c) { return s + c.total; }, 0);
+    document.getElementById(cfg.foot).innerHTML = "<tr>" +
+      "<td>Total · " + fmtInt.format(rows.length) + "</td>" +
+      '<td class="qtd">' + fmtInt.format(tQtd) + "</td>" +
+      "<td>" + money(tMed) + "</td>" +
+      "<td>" + pct(tTot ? 100 : 0) + "</td>" +
+      '<td class="' + cls + '">' + money(tTot) + "</td></tr>";
+  }
+
+  var HTXCOLS = [
+    { k: "id", t: "ID" },
+    { k: "data", t: "Data" },
+    { k: "tipo", t: "Tipo", left: true },
+    { k: "titular", t: "Titular", left: true },
+    { k: "conta", t: "Conta", left: true },
+    { k: "categoria", t: "Categoria", left: true },
+    { k: "estabelecimento", t: "Estabelecimento", left: true },
+    { k: "descricao", t: "Descrição", left: true },
+    { k: "valor", t: "Valor" }
+  ];
+
+  function renderHistTables(r) {
+    var from = state.from, to = state.to;
+    function okTit(t) { return state.titular === "Todos" || t.titular === state.titular; }
+    function okCat(t) { return !state.cats.length || state.cats.indexOf(t.categoria) >= 0; }
+    function okEst(t) { return !state.estabs.length || state.estabs.indexOf(t.estabelecimento) >= 0; }
+    function okTx(t) { return !state.txIds.length || state.txIds.indexOf(String(t.id)) >= 0; }
+
+    // Série completa: do primeiro lançamento até o fim do período escolhido.
+    var fimSerie = to < MAX_DATE ? to : MAX_DATE;
+    var nMeses = monthsInRange(MIN_DATE, fimSerie).length;
+    var serie = TX.filter(function (t) { return t.data <= fimSerie && okTit(t); });
+    var noPeriodo = TX.filter(function (t) { return t.data >= from && t.data <= to && okTit(t); });
+
+    function de(tipo) {
+      var p = noPeriodo.filter(function (t) { return t.tipo === tipo; });
+      var s = serie.filter(function (t) { return t.tipo === tipo; });
+      var pCat = p.filter(function (t) { return okEst(t) && okTx(t); }), sCat = s.filter(function (t) { return okEst(t) && okTx(t); });
+      var pEst = p.filter(function (t) { return okCat(t) && okTx(t); }), sEst = s.filter(function (t) { return okCat(t) && okTx(t); });
+      return { cat: histAgg(pCat, "categoria", tipo, sCat, nMeses), est: histAgg(pEst, "estabelecimento", tipo, sEst, nMeses) };
+    }
+    var g = de("Gastos"), rr = de("Rendas");
+    renderHistTable({ head: "headHGCat", body: "bodyHGCat", foot: "footHGCat", dim: "categoria", title: "Categoria", sort: state.sortHGCat }, g.cat);
+    renderHistTable({ head: "headHGEst", body: "bodyHGEst", foot: "footHGEst", dim: "estabelecimento", title: "Estabelecimento", sort: state.sortHGEst }, g.est);
+    renderHistTable({ head: "headHRCat", body: "bodyHRCat", foot: "footHRCat", dim: "categoria", title: "Categoria", sort: state.sortHRCat, rendas: true }, rr.cat);
+    renderHistTable({ head: "headHREst", body: "bodyHREst", foot: "footHREst", dim: "estabelecimento", title: "Estabelecimento", sort: state.sortHREst, rendas: true }, rr.est);
+    var serieTxt = "média mensal sobre " + nMeses + (nMeses === 1 ? " mês" : " meses") + " (" + br(MIN_DATE) + " a " + br(fimSerie) + ")";
+    document.getElementById("hGHint").textContent = g.cat.length + " categorias · " + g.est.length + " estabelecimentos · " + serieTxt;
+    document.getElementById("hRHint").textContent = rr.cat.length + " categorias · " + rr.est.length + " origens · " + serieTxt;
+
+    // Transações: todas do período e titular, de qualquer tipo; obedece aos filtros de categoria e estabelecimento.
+    var st = state.sortHTx;
+    sortableHead("headHTx", HTXCOLS, st);
+    var rows = noPeriodo.filter(function (t) { return okCat(t) && okEst(t); }).slice().sort(function (a, b) {
+      var va = a[st.k], vb = b[st.k];
+      if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb), "pt-BR") * st.d;
+      return (va - vb) * st.d;
+    });
+    var tbx = document.getElementById("bodyHTx");
+    tbx.className = state.txIds.length ? "has-sel" : "";
+    tbx.innerHTML = rows.length ? rows.map(function (t) {
+      return rowOpen("transacao", String(t.id)) +
+        "<td>" + t.id + "</td><td>" + br(t.data) + "</td>" +
+        '<td class="tipo">' + esc(t.tipo) + "</td>" +
+        '<td class="l">' + esc(t.titular) + "</td>" +
+        '<td class="l">' + esc(t.conta) + "</td>" +
+        '<td class="l">' + esc(t.categoria) + "</td>" +
+        '<td class="l">' + esc(t.estabelecimento) + "</td>" +
+        '<td class="l desc" title="' + esc(t.descricao) + '">' + esc(t.descricao) + "</td>" +
+        '<td class="gastos' + (t.valor > 0 ? " pos" : "") + '">' + money(t.valor) + "</td></tr>";
+    }).join("") : '<tr><td colspan="9" style="text-align:center;color:var(--muted)">Nenhuma transação neste recorte.</td></tr>';
+    var marcadas = state.txIds.length ? rows.filter(function (t) { return state.txIds.indexOf(String(t.id)) >= 0; }) : rows;
+    var soma = marcadas.reduce(function (a, t) { return a + t.valor; }, 0);
+    document.getElementById("footHTx").innerHTML = "<tr><td>" + (state.txIds.length ? "Selecionado" : "Total") + "</td>" +
+      '<td class="l" colspan="7">' + (state.txIds.length ? fmtInt.format(marcadas.length) + " de " : "") + fmtInt.format(rows.length) +
+      (rows.length === 1 ? " transação" : " transações") + " · soma com sinal (rendas positivas, gastos negativos)</td>" +
+      '<td class="gastos' + (soma > 0 ? " pos" : "") + '">' + money(soma) + "</td></tr>";
+    document.getElementById("hTxHint").textContent = fmtInt.format(rows.length) + " lançamentos de todos os tipos no período";
   }
 
   function render() {
@@ -2142,7 +2324,7 @@
 
   function additive(e) { return e.ctrlKey || e.metaKey || e.shiftKey; }
 
-  ["tbody", "bodyCat", "bodyEst", "bodyTx"].forEach(function (id) {
+  ["tbody", "bodyCat", "bodyEst", "bodyTx", "bodyHGCat", "bodyHGEst", "bodyHRCat", "bodyHREst", "bodyHTx"].forEach(function (id) {
     var el = document.getElementById(id);
     el.addEventListener("click", function (e) {
       var tr = e.target.closest("tr[data-dim]");

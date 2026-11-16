@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { buildState as buildFinance, buildFIN } from "./finance.js?v=15";
+import { buildState as buildFinance, buildFIN } from "./finance.js?v=16";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -944,7 +944,7 @@ function applyMod() {
     if (b.dataset.mod === S.mod) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   }
   $("mod-title").textContent = MOD_TITLES[S.mod];
-  document.title = MOD_TITLES[S.mod];
+  document.title = `Management App - ${MOD_TITLES[S.mod]}`;
   if (S.mod === "fin" && !S.fin.state && !S.fin.loading && !S.fin.error) loadFinance();
 }
 $("modnav").addEventListener("click", (e) => {
@@ -986,7 +986,7 @@ function mountPainel(fin, quando) {
   window.__FIN__ = fin;
   const old = $("fin-frame");
   if (old && old.contentWindow && old.contentWindow.__aplicarDados) { old.contentWindow.__aplicarDados(fin, quando); return; }
-  const fr = h("iframe", { id: "fin-frame", src: "fin/painel.html?v=15", title: "Painel de finanças", scrolling: "no" });
+  const fr = h("iframe", { id: "fin-frame", src: "fin/painel.html?v=16", title: "Painel de finanças", scrolling: "no" });
   fr.addEventListener("load", () => {
     const doc = fr.contentDocument; if (!doc) return;
     const fit = () => { fr.style.height = doc.documentElement.scrollHeight + "px"; };
