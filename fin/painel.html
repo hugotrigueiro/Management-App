@@ -515,6 +515,28 @@
   }
 
   /* ---------- dentro do app ---------- */
+  /* tabelas compactas do Histórico: sem rolagem lateral, 10 linhas visíveis */
+  .tbl-h { overflow-x: hidden; }
+  .tbl-h table { min-width: 0; width: 100%; table-layout: fixed; }
+  .tbl-h th, .tbl-h td { box-sizing: border-box; padding-left: 8px; padding-right: 8px; }
+  .tbl-h th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
+  .tbl-h th:nth-child(2) { width: 54px; }
+  .tbl-h th:nth-child(3) { width: 112px; }
+  .tbl-h th:nth-child(4) { width: 62px; }
+  .tbl-h th:nth-child(5) { width: 120px; }
+  .tbl-h td:first-child, .tbl-h th:first-child { overflow: hidden; text-overflow: ellipsis; }
+  .tbl-h th:first-child { white-space: nowrap; }
+  .tbl-h th .arrow { margin-left: 2px; }
+  @media (max-width: 480px) {
+    .tbl-h th, .tbl-h td { padding-left: 6px; padding-right: 6px; }
+    .tbl-h th { font-size: 9px; letter-spacing: .04em; }
+    .tbl-h td { font-size: 11px; }
+    .tbl-h td:first-child { font-size: 12px; }
+    .tbl-h th:nth-child(2) { width: 40px; }
+    .tbl-h th:nth-child(3) { width: 88px; }
+    .tbl-h th:nth-child(4) { width: 48px; }
+    .tbl-h th:nth-child(5) { width: 94px; }
+  }
   .cards-5 .card .val { font-size: clamp(17px, 1.75vw, 22px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tbl-sm td.rendas { font-weight: 600; color: var(--rendas-ink); }
   .tbl-tx td.tipo { font-family: var(--sans); font-size: 12px; color: var(--ink-2); text-align: left; }
@@ -749,10 +771,10 @@
         <span class="hint" id="hGHint"></span>
       </div>
       <div class="duo">
-        <div class="table-shell tbl-sm">
+        <div class="table-shell tbl-sm tbl-h">
           <table><thead><tr id="headHGCat"></tr></thead><tbody id="bodyHGCat"></tbody><tfoot id="footHGCat"></tfoot></table>
         </div>
-        <div class="table-shell tbl-sm">
+        <div class="table-shell tbl-sm tbl-h">
           <table><thead><tr id="headHGEst"></tr></thead><tbody id="bodyHGEst"></tbody><tfoot id="footHGEst"></tfoot></table>
         </div>
       </div>
@@ -762,10 +784,10 @@
         <span class="hint" id="hRHint"></span>
       </div>
       <div class="duo">
-        <div class="table-shell tbl-sm">
+        <div class="table-shell tbl-sm tbl-h">
           <table><thead><tr id="headHRCat"></tr></thead><tbody id="bodyHRCat"></tbody><tfoot id="footHRCat"></tfoot></table>
         </div>
-        <div class="table-shell tbl-sm">
+        <div class="table-shell tbl-sm tbl-h">
           <table><thead><tr id="headHREst"></tr></thead><tbody id="bodyHREst"></tbody><tfoot id="footHREst"></tfoot></table>
         </div>
       </div>
@@ -2190,7 +2212,7 @@
     tb.className = DIMS[cfg.dim].sel().length ? "has-sel" : "";
     tb.innerHTML = rows.length ? rows.map(function (c) {
       return rowOpen(cfg.dim, c.key) +
-        "<td>" + esc(c.key) + "</td>" +
+        '<td title="' + esc(c.key) + '">' + esc(c.key) + "</td>" +
         '<td class="qtd">' + fmtInt.format(c.qtd) + "</td>" +
         "<td>" + money(c.media) + "</td>" +
         "<td>" + pct(c.pct) + "</td>" +
@@ -2205,6 +2227,14 @@
       "<td>" + money(tMed) + "</td>" +
       "<td>" + pct(tTot ? 100 : 0) + "</td>" +
       '<td class="' + cls + '">' + money(tTot) + "</td></tr>";
+
+    // Mostra no máximo 10 linhas; o resto fica na rolagem vertical da própria tabela.
+    var shell = tb.closest(".table-shell");
+    if (rows.length > 10 && tb.rows[0] && tb.rows[0].offsetHeight) {
+      var hh = shell.querySelector("thead").offsetHeight, fh = shell.querySelector("tfoot").offsetHeight;
+      var rh = 0; for (var i = 0; i < 10; i++) rh += tb.rows[i].offsetHeight;
+      shell.style.maxHeight = (hh + rh + fh + 2) + "px";
+    } else shell.style.maxHeight = "none";
   }
 
   var HTXCOLS = [
