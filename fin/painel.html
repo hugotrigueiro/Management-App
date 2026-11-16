@@ -1941,7 +1941,28 @@
                   hint: "patChartHint", tip: "patChartTip" };
 
   function renderChart(r) {
-    desenhaGrafico(IDS_FIN, r.monthly, VISOES[state.chartView] || VISOES.ambos);
+    var visao = VISOES[state.chartView] || VISOES.ambos, so = "";
+    // Na visão de rendas e gastos, mostra só a série que tem valor no recorte:
+    // um filtro só de gastos (ou só de rendas) não desenha a outra barra zerada.
+    if (visao === VISOES.ambos) {
+      var temG = r.monthly.some(function (m) { return Math.abs(m.gastos) > 0.004; });
+      var temR = r.monthly.some(function (m) { return Math.abs(m.rendas) > 0.004; });
+      if (temG !== temR) {
+        so = temG ? "gastos" : "rendas";
+        visao = {
+          titulo: temG ? "Gastos por Mês" : "Rendas por Mês",
+          series: [visao.series[temG ? 0 : 1]],
+          tooltip: function (d) {
+            return temG ? linha("var(--gastos)", "Gastos", d.gastos) : linha("var(--rendas)", "Rendas", d.rendas);
+          }
+        };
+      }
+    }
+    desenhaGrafico(IDS_FIN, r.monthly, visao);
+    if (so) {
+      var hint = document.getElementById(IDS_FIN.hint);
+      hint.textContent += " · só " + so + " neste filtro";
+    }
   }
 
   // ---- Patrimônio ---------------------------------------------------------
