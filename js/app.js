@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { buildState as buildFinance, buildFIN } from "./finance.js?v=18";
+import { buildState as buildFinance, buildFIN } from "./finance.js?v=19";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
@@ -986,7 +986,7 @@ function mountPainel(fin, quando) {
   window.__FIN__ = fin;
   const old = $("fin-frame");
   if (old && old.contentWindow && old.contentWindow.__aplicarDados) { old.contentWindow.__aplicarDados(fin, quando); return; }
-  const fr = h("iframe", { id: "fin-frame", src: "fin/painel.html?v=18", title: "Painel de finanças", scrolling: "no" });
+  const fr = h("iframe", { id: "fin-frame", src: "fin/painel.html?v=19", title: "Painel de finanças", scrolling: "no" });
   fr.addEventListener("load", () => {
     const doc = fr.contentDocument; if (!doc) return;
     const fit = () => { fr.style.height = doc.documentElement.scrollHeight + "px"; };

@@ -515,6 +515,14 @@
   }
 
   /* ---------- dentro do app ---------- */
+  /* seleção de barras no gráfico do Histórico */
+  .chart-hit.sel-hit { cursor: pointer; }
+  .bar-g { transition: opacity .12s ease; }
+  .bar-g.apagada { opacity: .28; }
+  svg.arrastando .bar-g { opacity: .28; }
+  svg.arrastando .bar-g.previa { opacity: 1; }
+  svg.arrastando { cursor: ew-resize; user-select: none; }
+
   /* tabelas compactas do Histórico: sem rolagem lateral, 10 linhas visíveis */
   .tbl-h { overflow-x: hidden; }
   .tbl-h table { min-width: 0; width: 100%; table-layout: fixed; }
@@ -620,7 +628,7 @@
       <span class="lbl">Filtro da tabela</span>
       <span class="xchips" id="xchips"></span>
       <button type="button" class="xclear" id="xclear" hidden>Limpar tudo</button>
-      <span class="xhint"><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd> + clique soma categorias &middot; <kbd>Esc</kbd> ou clique fora limpa</span>
+      <span class="xhint"><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd> + clique soma à seleção &middot; arraste no gráfico para pegar várias barras &middot; <kbd>Esc</kbd> ou clique fora limpa</span>
     </div>
 
     <div id="panel-mes">
@@ -1010,7 +1018,7 @@
   function novoEstado(panel, from, to) {
     return {
       panel: panel, from: from, to: to, titular: "Todos",
-      cats: [], estabs: [], txIds: [],
+      cats: [], estabs: [], txIds: [], bars: [],
       sortKey: "gastos", sortDir: -1,
       sortCat: { k: "gastos", d: -1 }, sortEst: { k: "gastos", d: -1 },
       sortTx: { k: "data", d: -1 },
@@ -1075,27 +1083,35 @@
     function okCat(t) { return !state.cats.length || state.cats.indexOf(t.categoria) >= 0; }
     function okEst(t) { return !state.estabs.length || state.estabs.indexOf(t.estabelecimento) >= 0; }
     function okTx(t) { return !state.txIds.length || state.txIds.indexOf(String(t.id)) >= 0; }
+    function okBar(t) { return barOk(t); }
 
     var gastos = base.filter(function (t) { return t.tipo === "Gastos"; });
     var rendas = base.filter(function (t) { return t.tipo === "Rendas"; });
 
     // Cross-filter: cada tabela ignora a propria dimensao e obedece as demais,
     // para que continue possivel somar valores dentro dela. Os scorecards obedecem a tudo.
-    var gCat = gastos.filter(function (t) { return okEst(t) && okTx(t); });
-    var gEst = gastos.filter(function (t) { return okCat(t) && okTx(t); });
-    var gTx = gastos.filter(function (t) { return okCat(t) && okEst(t); });
-    var gSel = gastos.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
-    var rSel = rendas.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+    var gCat = gastos.filter(function (t) { return okEst(t) && okTx(t) && okBar(t); });
+    var gEst = gastos.filter(function (t) { return okCat(t) && okTx(t) && okBar(t); });
+    var gTx = gastos.filter(function (t) { return okCat(t) && okEst(t) && okBar(t); });
+    // O gráfico ignora a seleção de barras (senão as não escolhidas sumiriam); os scorecards obedecem.
+    var gChart = gastos.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+    var rChart = rendas.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+    var gSel = gChart.filter(okBar);
+    var rSel = rChart.filter(okBar);
 
     // Saldo: soma crua de TODOS os lancamentos do recorte, qualquer tipo.
-    var allSel = base.filter(function (t) { return okCat(t) && okEst(t) && okTx(t); });
+    var allSel = base.filter(function (t) { return okCat(t) && okEst(t) && okTx(t) && okBar(t); });
     var saldo = allSel.reduce(function (s, t) { return s + t.valor; }, 0);
     var foraGR = allSel.filter(function (t) { return t.tipo !== "Gastos" && t.tipo !== "Rendas"; });
 
     var totTx = gTx.reduce(function (s, t) { return s - t.valor; }, 0);
     var totGastos = gSel.reduce(function (s, t) { return s - t.valor; }, 0);
     var totRendas = rSel.reduce(function (s, t) { return s + t.valor; }, 0);
-    var metaTotal = months.reduce(function (s, ym) {
+    // Com barras selecionadas, a meta soma só os meses das barras de gasto (ou do mês inteiro) escolhidas.
+    var metaMonths = !state.bars.length ? months : months.filter(function (ym) {
+      return state.bars.indexOf("G|" + ym) >= 0 || state.bars.indexOf("M|" + ym) >= 0;
+    });
+    var metaTotal = metaMonths.reduce(function (s, ym) {
       if (!state.cats.length) return s + (metaMonthTotal[ym] || 0);
       return s + state.cats.reduce(function (a, c) { return a + (metaByMonthCat[ym + "|" + c] || 0); }, 0);
     }, 0);
@@ -1125,11 +1141,11 @@
     var monthly = months.map(function (ym) { return { ym: ym, gastos: 0, rendas: 0 }; });
     var mIdx = {};
     monthly.forEach(function (o, i) { mIdx[o.ym] = i; });
-    gSel.forEach(function (t) {
+    gChart.forEach(function (t) {
       var i = mIdx[t.data.slice(0, 7)];
       if (i !== undefined) monthly[i].gastos -= t.valor;
     });
-    rSel.forEach(function (t) {
+    rChart.forEach(function (t) {
       var i = mIdx[t.data.slice(0, 7)];
       if (i !== undefined) monthly[i].rendas += t.valor;
     });
@@ -1140,7 +1156,7 @@
       txRows: gTx, totTx: totTx,
       listMeta: listMeta, listCat: listCat, listEst: listEst,
       totGastos: totGastos, totRendas: totRendas, metaTotal: metaTotal,
-      nGastos: gSel.length, nRendas: rSel.length, months: months,
+      nGastos: gSel.length, nRendas: rSel.length, months: months, metaMonths: metaMonths,
       nEstornos: gCat.filter(function (t) { return t.valor > 0; }).length
     };
   }
@@ -1288,7 +1304,22 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
+  // Barras do gráfico do Histórico: "G|2026-03" (gastos), "R|2026-03" (rendas) ou "M|2026-03" (mês inteiro, visão Retorno).
+  function barOk(t) {
+    if (!state.bars.length) return true;
+    var ym = t.data.slice(0, 7);
+    if (state.bars.indexOf("M|" + ym) >= 0) return true;
+    if (t.tipo === "Gastos") return state.bars.indexOf("G|" + ym) >= 0;
+    if (t.tipo === "Rendas") return state.bars.indexOf("R|" + ym) >= 0;
+    return false;
+  }
+  function rotuloBarra(k) {
+    var nome = k[0] === "G" ? "Gastos " : k[0] === "R" ? "Rendas " : "";
+    return nome + rotuloMes(k.slice(2));
+  }
+
   var DIMS = {
+    barra: { tag: "MÊS", sel: function () { return state.bars; }, label: rotuloBarra },
     categoria: { tag: "CAT", sel: function () { return state.cats; } },
     estabelecimento: { tag: "EST", sel: function () { return state.estabs; } },
     transacao: {
@@ -1318,7 +1349,7 @@
 
   function activeFilters() {
     var out = [];
-    ["categoria", "estabelecimento", "transacao"].forEach(function (dim) {
+    ["barra", "categoria", "estabelecimento", "transacao"].forEach(function (dim) {
       DIMS[dim].sel().forEach(function (v) {
         var lab = DIMS[dim].label ? DIMS[dim].label(v) : v;
         out.push({ dim: dim, val: v, label: lab });
@@ -1332,6 +1363,13 @@
     state.cats.length = 0;
     state.estabs.length = 0;
     state.txIds.length = 0;
+    state.bars.length = 0;
+    render();
+  }
+  // Seleção de várias barras de uma vez (arrastar): substitui ou soma à seleção atual.
+  function setBars(keys, additive) {
+    if (additive) keys.forEach(function (k) { if (state.bars.indexOf(k) < 0) state.bars.push(k); });
+    else { state.bars.length = 0; Array.prototype.push.apply(state.bars, keys); }
     render();
   }
 
@@ -1546,12 +1584,55 @@
       ' V' + y + ' Z"/>';
   }
 
+  // Clique numa barra filtra; Ctrl/⌘ soma; arrastar com o mouse seleciona várias de uma vez.
+  // Os ouvintes de janela ficam ligados uma vez só e olham o gráfico atual.
+  var DRAG = { el: null, ordem: [], a: -1, b: -1, add: false, ativo: false, fim: 0 };
+  function previaBarras() {
+    var lo = Math.min(DRAG.a, DRAG.b), hi = Math.max(DRAG.a, DRAG.b);
+    Array.prototype.forEach.call(DRAG.el.querySelectorAll(".bar-g[data-key]"), function (g) {
+      var n = +g.dataset.n;
+      g.classList.toggle("previa", n >= lo && n <= hi);
+    });
+    DRAG.el.classList.add("arrastando");
+  }
+  window.addEventListener("pointermove", function (e) {
+    if (!DRAG.ativo) return;
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var h = el && el.closest ? el.closest(".sel-hit") : null; if (!h) return;
+    var n = DRAG.ordem.indexOf(h.dataset.key);
+    if (n >= 0 && n !== DRAG.b) { DRAG.b = n; previaBarras(); }
+  });
+  window.addEventListener("pointerup", function () {
+    if (!DRAG.ativo) return;
+    DRAG.ativo = false; DRAG.fim = Date.now();
+    DRAG.el.classList.remove("arrastando");
+    if (DRAG.a === DRAG.b) { toggleFilter("barra", DRAG.ordem[DRAG.a], DRAG.add); return; }
+    var lo = Math.min(DRAG.a, DRAG.b), hi = Math.max(DRAG.a, DRAG.b);
+    setBars(DRAG.ordem.slice(lo, hi + 1), DRAG.add);
+  });
+  function ligarSelecao(svgEl) {
+    var ordem = Array.prototype.map.call(svgEl.querySelectorAll(".bar-g[data-key]"), function (g) { return g.dataset.key; });
+    svgEl.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "touch" || e.button !== 0) return;
+      var h = e.target.closest(".sel-hit"); if (!h) return;
+      var n = ordem.indexOf(h.dataset.key); if (n < 0) return;
+      DRAG = { el: svgEl, ordem: ordem, a: n, b: n, add: e.ctrlKey || e.metaKey || e.shiftKey, ativo: true, fim: 0 };
+      e.preventDefault();
+    });
+    // Toque (celular): cada toque soma ou tira a barra da seleção.
+    svgEl.addEventListener("click", function (e) {
+      if (Date.now() - DRAG.fim < 400) return;
+      var h = e.target.closest(".sel-hit"); if (!h) return;
+      toggleFilter("barra", h.dataset.key, e.ctrlKey || e.metaKey || e.shiftKey || state.bars.length > 0);
+    });
+  }
+
   var VISOES = {
     ambos: {
       titulo: "Rendas e Gastos por Mês",
       series: [
-        { nome: "Gastos", cor: "var(--gastos)", val: function (d) { return d.gastos; } },
-        { nome: "Rendas", cor: "var(--rendas)", val: function (d) { return d.rendas; } }
+        { nome: "Gastos", chave: "G", cor: "var(--gastos)", val: function (d) { return d.gastos; } },
+        { nome: "Rendas", chave: "R", cor: "var(--rendas)", val: function (d) { return d.rendas; } }
       ],
       tooltip: function (d) { return linhasFin(d); }
     },
@@ -1563,7 +1644,7 @@
       ],
       series: [
         {
-          nome: "Retorno", cor: "var(--rendas)",
+          nome: "Retorno", chave: "M", cor: "var(--rendas)",
           corDe: function (v) { return v < 0 ? "var(--gastos)" : "var(--rendas)"; },
           val: function (d) { return d.rendas - d.gastos; }
         }
@@ -1695,6 +1776,7 @@
     }
     function rotuloValor(val) { return formatos(val)[iForm]; }
 
+    var selec = ids.selecao ? ids.selecao() : null, nBar = 0;
     dados.forEach(function (d, i) {
       var cx = startX + grupoW * i + grupoW / 2;
       var largura = k * bw + (k - 1) * GAP;
@@ -1703,6 +1785,9 @@
         var x = cx - largura / 2 + j * (bw + GAP);
         var yv = yOf(val), alt = Math.abs(zeroY - yv);
         var paraCima = val >= 0;
+        var chave = se.chave ? se.chave + "|" + d.ym : "";
+        var apagada = selec && selec.length && selec.indexOf(chave) < 0;
+        svg.push('<g class="bar-g' + (apagada ? " apagada" : "") + '"' + (chave ? ' data-key="' + chave + '" data-n="' + (nBar++) + '"' : "") + ">");
         svg.push(barra(x, paraCima ? yv : zeroY, bw, alt, se.corDe ? se.corDe(val) : se.cor, paraCima));
 
         var dentro = alt >= fs + 10;
@@ -1712,11 +1797,20 @@
         svg.push('<text class="chart-val ' + (dentro ? "dentro" : "fora") + '" x="' + (x + bw / 2).toFixed(1) +
           '" y="' + ty.toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle">' +
           rotuloValor(val) + "</text>");
+        svg.push("</g>");
       });
       svg.push('<text class="chart-xlab" x="' + cx + '" y="' + (fundo + 18) +
         '" text-anchor="middle">' + rotuloMes(d.ym) + "</text>");
-      svg.push('<rect class="chart-hit" data-i="' + i + '" x="' + (startX + grupoW * i) +
-        '" y="' + MT + '" width="' + grupoW + '" height="' + plotH + '"/>');
+      if (selec && series.every(function (se) { return se.chave; })) {
+        // Uma área de clique por barra: cada fatia do mês corresponde a uma série.
+        series.forEach(function (se, j) {
+          svg.push('<rect class="chart-hit sel-hit" data-i="' + i + '" data-key="' + se.chave + "|" + d.ym + '" x="' +
+            (startX + grupoW * i + (grupoW / k) * j) + '" y="' + MT + '" width="' + (grupoW / k) + '" height="' + plotH + '"/>');
+        });
+      } else {
+        svg.push('<rect class="chart-hit" data-i="' + i + '" x="' + (startX + grupoW * i) +
+          '" y="' + MT + '" width="' + grupoW + '" height="' + plotH + '"/>');
+      }
     });
     svg.push("</svg>");
     host.innerHTML = svg.join("");
@@ -1737,6 +1831,7 @@
       });
       hit.addEventListener("mouseleave", function () { tip.hidden = true; });
     });
+    if (selec) ligarSelecao(svgEl);
 
     document.getElementById(ids.hint).textContent =
       n + (n === 1 ? " mês" : " meses") +
@@ -1958,7 +2053,7 @@
                    hint: "rendHint", tip: "rendTip" };
 
   var IDS_FIN = { host: "chartScroll", titulo: "chartTitle", legenda: "chartLegend",
-                  hint: "chartHint", tip: "chartTip" };
+                  hint: "chartHint", tip: "chartTip", selecao: function () { return state.bars; } };
   var IDS_PAT = { host: "patChartScroll", titulo: "patChartTitle", legenda: "patChartLegend",
                   hint: "patChartHint", tip: "patChartTip" };
 
@@ -2145,7 +2240,8 @@
       document.getElementById(id + "Sub").textContent = sub;
     }
 
-    põe("hMeta", r.metaTotal, nm + (nm === 1 ? " mês somado" : " meses somados"));
+    var nMeta = r.metaMonths.length;
+    põe("hMeta", r.metaTotal, nMeta + (nMeta === 1 ? " mês somado" : " meses somados") + (state.bars.length ? " (barras escolhidas)" : ""));
     põe("hGastos", r.totGastos,
       r.metaTotal ? pct((r.totGastos / r.metaTotal) * 100) + " da meta" : "sem meta no período");
     põe("hRendas", r.totRendas, fmtInt.format(r.nRendas) + " lançamentos");
@@ -2265,8 +2361,8 @@
     function de(tipo) {
       var p = noPeriodo.filter(function (t) { return t.tipo === tipo; });
       var s = serie.filter(function (t) { return t.tipo === tipo; });
-      var pCat = p.filter(function (t) { return okEst(t) && okTx(t); }), sCat = s.filter(function (t) { return okEst(t) && okTx(t); });
-      var pEst = p.filter(function (t) { return okCat(t) && okTx(t); }), sEst = s.filter(function (t) { return okCat(t) && okTx(t); });
+      var pCat = p.filter(function (t) { return okEst(t) && okTx(t) && barOk(t); }), sCat = s.filter(function (t) { return okEst(t) && okTx(t); });
+      var pEst = p.filter(function (t) { return okCat(t) && okTx(t) && barOk(t); }), sEst = s.filter(function (t) { return okCat(t) && okTx(t); });
       return { cat: histAgg(pCat, "categoria", tipo, sCat, nMeses), est: histAgg(pEst, "estabelecimento", tipo, sEst, nMeses) };
     }
     var g = de("Gastos"), rr = de("Rendas");
@@ -2281,7 +2377,7 @@
     // Transações: todas do período e titular, de qualquer tipo; obedece aos filtros de categoria e estabelecimento.
     var st = state.sortHTx;
     sortableHead("headHTx", HTXCOLS, st);
-    var rows = noPeriodo.filter(function (t) { return okCat(t) && okEst(t); }).slice().sort(function (a, b) {
+    var rows = noPeriodo.filter(function (t) { return okCat(t) && okEst(t) && barOk(t); }).slice().sort(function (a, b) {
       var va = a[st.k], vb = b[st.k];
       if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb), "pt-BR") * st.d;
       return (va - vb) * st.d;
@@ -2399,7 +2495,7 @@
   document.addEventListener("click", function (e) {
     if (!activeFilters().length) return;
     var t = e.target;
-    if (t.closest && (t.closest(".table-shell") || t.closest(".xfilter") ||
+    if (t.closest && (t.closest(".table-shell") || t.closest(".xfilter") || t.closest(".chartbox") ||
         t.closest(".filters") || t.closest(".tabs"))) return;
     clearFiltros();
   }, true);
