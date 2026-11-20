@@ -1211,11 +1211,10 @@
     });
 
     rows.sort(function (a, b) {
-      var va = a[st.k], vb = b[st.k];
-      if (typeof va === "string" || typeof vb === "string") {
-        return String(va).localeCompare(String(vb), "pt-BR") * st.d;
-      }
-      return (va - vb) * st.d;
+      var va = a[st.k], vb = b[st.k], c;
+      if (typeof va === "string" || typeof vb === "string") c = String(va).localeCompare(String(vb), "pt-BR") * st.d;
+      else c = (va - vb) * st.d;
+      return c || (b.id - a.id);   // empate (ex.: mesmo dia): a mais recente primeiro
     });
 
     var tbx = document.getElementById("bodyTx");
@@ -2378,9 +2377,10 @@
     var st = state.sortHTx;
     sortableHead("headHTx", HTXCOLS, st);
     var rows = noPeriodo.filter(function (t) { return okCat(t) && okEst(t) && barOk(t); }).slice().sort(function (a, b) {
-      var va = a[st.k], vb = b[st.k];
-      if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb), "pt-BR") * st.d;
-      return (va - vb) * st.d;
+      var va = a[st.k], vb = b[st.k], c;
+      if (typeof va === "string" || typeof vb === "string") c = String(va).localeCompare(String(vb), "pt-BR") * st.d;
+      else c = (va - vb) * st.d;
+      return c || (b.id - a.id);   // empate (ex.: mesmo dia): a mais recente primeiro
     });
     var tbx = document.getElementById("bodyHTx");
     tbx.className = state.txIds.length ? "has-sel" : "";
